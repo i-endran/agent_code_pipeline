@@ -1,30 +1,23 @@
-"""
-Celery Tasks
-
-Background tasks for pipeline execution.
-"""
-
+import logging
+import asyncio
 from datetime import datetime
-from celery import shared_task
-
+from sqlalchemy.orm import Session
 from app.celery_app import celery_app
 from app.db.database import SessionLocal
-from app.models.models import Task, TaskStatus, AgentStage, StageLog
-
 from app.models.models import Task, TaskStatus, AgentStage, StageLog, Repository
 from app.services.repo_service import repo_service
 from app.services.artifact_service import artifact_service
 from app.utils.task_utils import send_task_update
 
+logger = logging.getLogger(__name__)
 
-@celery_app.task(name="app.tasks.run_pipeline", bind=True)
-def run_pipeline(self, task_id: str):
-    """Executes the agent pipeline for a task."""
+async def execute_pipeline(task_id: str):
+    """Internal async function to run the pipeline logic."""
     db: Session = SessionLocal()
     task = db.query(Task).filter(Task.id == task_id).first()
     
     if not task:
-        print(f"Task {task_id} not found")
+        logger.error(f"Task {task_id} not found")
         return
     
     try:
@@ -42,13 +35,13 @@ def run_pipeline(self, task_id: str):
         # Context for agents
         context = task.config.copy()
         context["task_id"] = task_id
+        context["storage_path"] = "./storage"
         
-        # 1. Check for Repository URL (usually in Scribe's requirement or project context)
+        # 1. Initialize Repository
         repo_url = context.get("scribe", {}).get("project_context", "")
         if "http" in repo_url:
             send_task_update(task_id, {"message": "Initializing repository..."})
             
-            # Create or get repository
             repo = db.query(Repository).filter(Repository.source_url == repo_url).first()
             if not repo:
                 repo = Repository(source_url=repo_url, local_path=f"./storage/repos/repo_{task_id}")
@@ -66,123 +59,65 @@ def run_pipeline(self, task_id: str):
             
             context["repo_path"] = repo_path
             send_task_update(task_id, {"message": f"Repository cloned to {repo_path}"})
-        
-        # Get enabled agents from pipeline
-        pipeline = task.pipeline
-        enabled_agents = pipeline.enabled_agents
-        
-        # Execute each agent in sequence
-        agent_stages = {
-            "scribe": AgentStage.SCRIBE,
-            "architect": AgentStage.ARCHITECT,
-            "forge": AgentStage.FORGE,
-            "herald": AgentStage.HERALD,
-            "sentinel": AgentStage.SENTINEL,
-            "phoenix": AgentStage.PHOENIX,
-        }
-        
-        current_context = task.context.copy()
-        artifacts = {}
-        total_tokens = 0
-        total_cost = 0.0
-        
-        for agent_id in enabled_agents:
-            stage = agent_stages.get(agent_id)
-            if not stage:
-                continue
+
+        # 2. SCRIBE Stage
+        from app.agents.scribe_agent import ScribeAgent
+        send_task_update(task_id, {"current_stage": "scribe", "progress": 20, "message": "Executing SCRIBE..."})
+        scribe = ScribeAgent(context["scribe"], task_id)
+        scribe_results = await scribe.run(context)
+        context["scribe_results"] = scribe_results
+
+        # 3. ARCHITECT Stage
+        if context.get("architect", {}).get("enabled"):
+            from app.agents.architect_agent import ArchitectAgent
+            send_task_update(task_id, {"current_stage": "architect", "progress": 40, "message": "Executing ARCHITECT..."})
+            architect = ArchitectAgent(context["architect"], task_id)
+            architect_results = await architect.run(context)
+            context["architect_results"] = architect_results
+
+        # 4. FORGE Stage
+        if context.get("forge", {}).get("enabled"):
+            from app.agents.forge_agent import ForgeAgent
+            send_task_update(task_id, {"current_stage": "forge", "progress": 60, "message": "Executing FORGE..."})
+            forge = ForgeAgent(context["forge"], task_id)
+            forge_results = await forge.run(context)
+            context["forge_results"] = forge_results
+
+        # 5. SENTINEL Stage
+        if context.get("sentinel", {}).get("enabled"):
+            from app.agents.sentinel_agent import SentinelAgent
+            send_task_update(task_id, {"current_stage": "sentinel", "progress": 80, "message": "Executing SENTINEL..."})
+            sentinel = SentinelAgent(context["sentinel"], task_id)
+            sentinel_results = await sentinel.run(context)
+            context["sentinel_results"] = sentinel_results
             
-            # Update current stage
-            task.current_stage = stage
-            db.commit()
-            
-            # Create stage log
-            stage_log = StageLog(
-                task_id=task_id,
-                stage=stage,
-                status="started",
-                started_at=datetime.utcnow(),
-                input_data=current_context
-            )
-            db.add(stage_log)
-            db.commit()
-            
-            try:
-                # TODO: Actually execute the agent
-                # result = execute_agent(agent_id, current_context)
-                
-                # Placeholder for now
-                result = {
-                    "output": f"Output from {agent_id}",
-                    "tokens_used": 100,
-                    "cost": 0.01
-                }
-                
-                # Update stage log
-                stage_log.status = "completed"
-                stage_log.completed_at = datetime.utcnow()
-                stage_log.duration_seconds = (
-                    stage_log.completed_at - stage_log.started_at
-                ).total_seconds()
-                stage_log.output_data = result
-                stage_log.input_tokens = result.get("tokens_used", 0) // 2
-                stage_log.output_tokens = result.get("tokens_used", 0) // 2
-                
-                # Accumulate results
-                artifacts[agent_id] = result.get("output")
-                total_tokens += result.get("tokens_used", 0)
-                total_cost += result.get("cost", 0.0)
-                
-                # Update context for next agent
-                current_context[f"{agent_id}_output"] = result.get("output")
-                
-            except Exception as e:
-                stage_log.status = "failed"
-                stage_log.error_message = str(e)
-                stage_log.completed_at = datetime.utcnow()
-                
-                task.status = TaskStatus.FAILED
-                task.error_message = f"Failed at {agent_id}: {str(e)}"
-                db.commit()
-                raise
-            
-            db.commit()
-        
-        # Complete task
+            if sentinel_results.get("action") == "reworking":
+                send_task_update(task_id, {"message": "Fixes required. Routing back to FORGE (simulation)..."})
+
+        # Finalize
         task.status = TaskStatus.COMPLETED
         task.completed_at = datetime.utcnow()
-        task.artifacts = artifacts
-        task.actual_tokens = total_tokens
-        task.actual_cost = total_cost
-        task.token_usage = {
-            "total": total_tokens,
-            "by_agent": {
-                a: artifacts.get(a, {}) for a in enabled_agents
-            }
-        }
         db.commit()
         
-        return {"task_id": task_id, "status": "completed"}
-        
+        send_task_update(task_id, {
+            "status": "completed",
+            "progress": 100,
+            "message": "Pipeline completed successfully!"
+        })
+
     except Exception as e:
-        # Mark as failed
-        task = db.query(Task).filter(Task.id == task_id).first()
-        if task:
-            task.status = TaskStatus.FAILED
-            task.error_message = str(e)
-            task.completed_at = datetime.utcnow()
-            db.commit()
-        raise
-        
+        logger.error(f"Pipeline failed for task {task_id}: {e}", exc_info=True)
+        task.status = TaskStatus.FAILED
+        task.error_message = str(e)
+        db.commit()
+        send_task_update(task_id, {
+            "status": "failed",
+            "message": f"Pipeline failed: {str(e)}"
+        })
     finally:
         db.close()
 
-
-@celery_app.task(bind=True, name="app.tasks.release_task")
-def release_task(self, task_id: int):
-    """
-    Process a task in the release queue.
-    
-    Called when the releaser agent is activated.
-    """
-    # TODO: Implement release processing
-    pass
+@celery_app.task(name="app.tasks.run_pipeline")
+def run_pipeline(task_id: str):
+    """Celery task wrapper for pipeline execution."""
+    asyncio.run(execute_pipeline(task_id))

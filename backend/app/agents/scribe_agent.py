@@ -1,0 +1,43 @@
+import logging
+from typing import Dict, Any, List
+from app.agents.base_agent import BaseAgent
+from app.services.artifact_service import artifact_service
+
+logger = logging.getLogger(__name__)
+
+class ScribeAgent(BaseAgent):
+    """Agent responsible for requirements analysis and document generation."""
+    
+    async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        self.logger.info("SCRIBE: Starting document generation...")
+        
+        scribe_config = context.get("scribe", {})
+        selected_docs = scribe_config.get("selected_documents", ["feature_doc"])
+        user_prompt = context.get("user_prompt", "")
+        requirement_text = scribe_config.get("requirement_text", "")
+        project_context = scribe_config.get("project_context", "")
+
+        results = {}
+        
+        for doc_type in selected_docs:
+            prompt = f"""
+Generate a {doc_type.replace('_', ' ').upper()} based on the following:
+REQUIREMENT: {requirement_text}
+PROJECT CONTEXT: {project_context}
+USER NOTES: {user_prompt}
+
+The output should be high-quality markdown.
+"""
+            # Call LLM
+            content = await self.call_llm(prompt)
+            
+            # Save artifact
+            path = artifact_service.save_artifact(self.task_id, doc_type, content)
+            results[doc_type] = path
+            self.logger.info(f"SCRIBE: Generated {doc_type} and saved to {path}")
+
+        return {
+            "status": "success",
+            "message": f"Generated {len(results)} documents",
+            "artifacts": results
+        }
