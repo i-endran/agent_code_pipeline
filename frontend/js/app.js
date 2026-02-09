@@ -155,6 +155,59 @@ function setInputValue(elementId, value) {
 function saveAgentConfig(agentId) {
     let config = {};
 
+    switch (agentId) {
+        case 'scribe':
+            const selectedDocs = Array.from(document.querySelectorAll('.scribe-doc-type:checked')).map(cb => cb.value);
+            config = {
+                user_prompt: document.getElementById('scribe-prompt').value,
+                requirement_text: document.getElementById('scribe-requirement').value,
+                project_context: document.getElementById('scribe-context').value,
+                output_format: document.getElementById('scribe-format').value,
+                selected_documents: selectedDocs,
+            };
+            break;
+        case 'architect':
+            config = {
+                user_prompt: document.getElementById('architect-prompt').value,
+                tech_stack: document.getElementById('architect-techstack').value,
+                architecture_notes: document.getElementById('architect-notes').value,
+                granularity: document.getElementById('architect-granularity').value,
+            };
+            break;
+        case 'forge':
+            config = {
+                user_prompt: document.getElementById('forge-prompt').value,
+                repo_path: document.getElementById('forge-repo').value,
+                target_branch: document.getElementById('forge-branch').value,
+                test_command: document.getElementById('forge-test').value,
+                lint_command: document.getElementById('forge-lint').value,
+            };
+            break;
+        case 'sentinel':
+            config = {
+                user_prompt: document.getElementById('sentinel-prompt').value,
+                review_criteria: document.getElementById('sentinel-criteria').value,
+                auto_approve_threshold: document.getElementById('sentinel-threshold').value,
+                max_fix_iterations: document.getElementById('sentinel-iterations').value,
+                target_branch: document.getElementById('sentinel-target').value,
+            };
+            break;
+        case 'phoenix':
+            config = {
+                user_prompt: document.getElementById('phoenix-prompt').value,
+                release_branch: document.getElementById('phoenix-branch').value,
+                chat_platform: document.getElementById('phoenix-platform').value,
+                merge_strategy: document.getElementById('phoenix-strategy').value,
+                chat_webhook_url: document.getElementById('phoenix-webhook').value,
+                changelog_enabled: document.getElementById('phoenix-changelog').checked,
+                notification_template: document.getElementById('phoenix-template').value,
+            };
+            break;
+    }
+
+    pipelineManager.setAgentConfig(agentId, config);
+
+    // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById(`modal-${agentId}`));
     modal.hide();
 

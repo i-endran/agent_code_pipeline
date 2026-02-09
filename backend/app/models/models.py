@@ -52,40 +52,57 @@ class Pipeline(Base):
     tasks = relationship("Task", back_populates="pipeline")
 
 
+class Repository(Base):
+    __tablename__ = "repositories"
+    id = Column(Integer, primary_key=True, index=True)
+    source_url = Column(String, unique=True, index=True)
+    local_path = Column(String)
+    clone_status = Column(String, default="pending")  # pending, cloned, error
+    last_synced = Column(DateTime, default=datetime.utcnow)
+    
+    tasks = relationship("Task", back_populates="repository")
+
 class Task(Base):
-    """Pipeline task execution model."""
     __tablename__ = "tasks"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     pipeline_id = Column(Integer, ForeignKey("pipelines.id"), nullable=False)
     
-    # Status tracking
     status = Column(Enum(TaskStatus), default=TaskStatus.PENDING)
     current_stage = Column(Enum(AgentStage), nullable=True)
+    progress = Column(Integer, default=0)
     
-    # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    # JSON field for full configuration
+    config = Column(JSON)
     
-    # Context and artifacts
-    context = Column(JSON, nullable=False, default=dict)
-    artifacts = Column(JSON, nullable=False, default=dict)
-    
-    # Token tracking
+    # Consumption metrics
     token_usage = Column(JSON, nullable=False, default=dict)
-    estimated_tokens = Column(Integer, default=0)
-    actual_tokens = Column(Integer, default=0)
-    estimated_cost = Column(Float, default=0.0)
-    actual_cost = Column(Float, default=0.0)
+    total_tokens = Column(Integer, default=0)
+    total_cost = Column(Float, default=0.0)
     
     # Error handling
     error_message = Column(Text, nullable=True)
     retry_count = Column(Integer, default=0)
     
     # Relationships
+    repository_id = Column(Integer, ForeignKey("repositories.id"), nullable=True)
+    repository = relationship("Repository", back_populates="tasks")
+    artifacts = relationship("TaskArtifact", back_populates="task")
     pipeline = relationship("Pipeline", back_populates="tasks")
     stage_logs = relationship("StageLog", back_populates="task")
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class TaskArtifact(Base):
+    __tablename__ = "task_artifacts"
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(String, ForeignKey("tasks.id"))
+    artifact_type = Column(String)  # feature_doc, dpia, data_flow, plan, patch
+    file_path = Column(String)      # Relative to storage/artifacts
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    task = relationship("Task", back_populates="artifacts")
 
 
 class StageLog(Base):

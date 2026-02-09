@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.api import pipelines, tasks, agents, websocket
+from app.api import pipelines, tasks, agents, websocket, artifacts
 from app.db.database import engine, Base
 from app.services.logging_service import setup_logging
 
@@ -79,23 +79,11 @@ app.include_router(
     tags=["Pipelines"]
 )
 
-app.include_router(
-    tasks.router,
-    prefix="/api/v1/tasks",
-    tags=["Tasks"]
-)
-
-app.include_router(
-    agents.router,
-    prefix="/api/v1/agents",
-    tags=["Agents"]
-)
-
+app.include_router(tasks.router, prefix="/api/tasks", tags=["Tasks"])
+app.include_router(agents.router, prefix="/api/agents", tags=["Agents"])
+app.include_router(artifacts.router, prefix="/api/artifacts", tags=["Artifacts"])
 # WebSocket for real-time status
-app.include_router(
-    websocket.router,
-    tags=["WebSocket"]
-)
+app.include_router(websocket.router, tags=["WebSocket"])
 
 
 @app.get("/", tags=["Health"])

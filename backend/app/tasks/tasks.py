@@ -11,26 +11,61 @@ from app.celery_app import celery_app
 from app.db.database import SessionLocal
 from app.models.models import Task, TaskStatus, AgentStage, StageLog
 
+from app.models.models import Task, TaskStatus, AgentStage, StageLog, Repository
+from app.services.repo_service import repo_service
+from app.services.artifact_service import artifact_service
+from app.utils.task_utils import send_task_update
 
-@celery_app.task(bind=True, name="app.tasks.run_pipeline")
-def run_pipeline(self, task_id: int):
-    """
-    Execute a pipeline task through all enabled agents.
+
+@celery_app.task(name="app.tasks.run_pipeline", bind=True)
+def run_pipeline(self, task_id: str):
+    """Executes the agent pipeline for a task."""
+    db: Session = SessionLocal()
+    task = db.query(Task).filter(Task.id == task_id).first()
     
-    This is the main entry point for pipeline execution.
-    """
-    db = SessionLocal()
+    if not task:
+        print(f"Task {task_id} not found")
+        return
     
     try:
-        # Get task
-        task = db.query(Task).filter(Task.id == task_id).first()
-        if not task:
-            raise ValueError(f"Task {task_id} not found")
-        
-        # Update status
         task.status = TaskStatus.PROCESSING
         task.started_at = datetime.utcnow()
         db.commit()
+        
+        # Initial status update
+        send_task_update(task_id, {
+            "status": "processing",
+            "progress": 5,
+            "message": "Starting pipeline execution..."
+        })
+        
+        # Context for agents
+        context = task.config.copy()
+        context["task_id"] = task_id
+        
+        # 1. Check for Repository URL (usually in Scribe's requirement or project context)
+        repo_url = context.get("scribe", {}).get("project_context", "")
+        if "http" in repo_url:
+            send_task_update(task_id, {"message": "Initializing repository..."})
+            
+            # Create or get repository
+            repo = db.query(Repository).filter(Repository.source_url == repo_url).first()
+            if not repo:
+                repo = Repository(source_url=repo_url, local_path=f"./storage/repos/repo_{task_id}")
+                db.add(repo)
+                db.commit()
+            
+            task.repository_id = repo.id
+            db.commit()
+            
+            # Clone repo
+            repo_path = repo_service.clone_repo(task_id, repo_url)
+            repo.local_path = repo_path
+            repo.clone_status = "cloned"
+            db.commit()
+            
+            context["repo_path"] = repo_path
+            send_task_update(task_id, {"message": f"Repository cloned to {repo_path}"})
         
         # Get enabled agents from pipeline
         pipeline = task.pipeline
