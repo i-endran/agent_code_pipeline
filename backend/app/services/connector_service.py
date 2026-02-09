@@ -59,6 +59,22 @@ class ConnectorService:
                 
             return response.json()
 
+    async def get_github_mr(
+        self,
+        connector_id: int,
+        repo_owner: str,
+        repo_name: str,
+        pull_number: int,
+        db: Session
+    ) -> Dict[str, Any]:
+        """Retrieves details of a Pull Request on GitHub."""
+        async with await self.get_github_client(connector_id, db) as client:
+            response = await client.get(f"/repos/{repo_owner}/{repo_name}/pulls/{pull_number}")
+            if response.status_code != 200:
+                logger.error(f"Failed to get GitHub PR: {response.text}")
+                raise RuntimeError(f"GitHub API error: {response.text}")
+            return response.json()
+
     async def send_slack_notification(
         self, 
         connector_id: int, 

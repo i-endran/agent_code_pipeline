@@ -17,8 +17,45 @@ class PhoenixAgent(BaseAgent):
         current_branch = context.get("forge_results", {}).get("branch")
         release_branch = context.get("phoenix", {}).get("release_branch", "main")
         
+        # 0. MR Listening / Status Check
+        sentinel_results = context.get("sentinel_results", {})
+        pr_number = sentinel_results.get("pull_number")
+        connector_id = context.get("sentinel", {}).get("connector_id")
+        
+        if pr_number and connector_id:
+            self.logger.info(f"PHOENIX: Checking status for PR #{pr_number}...")
+            from app.services.connector_service import connector_service
+            from app.db.database import SessionLocal
+            
+            db = SessionLocal()
+            try:
+                # Retrieve repo info from context or config
+                repo_owner = context.get("repo_owner") or "owner"
+                repo_name = context.get("repo_name") or "repo"
+                
+                pr_data = await connector_service.get_github_mr(
+                    connector_id=connector_id,
+                    repo_owner=repo_owner,
+                    repo_name=repo_name,
+                    pull_number=pr_number,
+                    db=db
+                )
+                
+                if not pr_data.get("merged", False):
+                    self.logger.info(f"PHOENIX: PR #{pr_number} is not merged yet. Waiting for webhook or manual approval.")
+                    return {
+                        "status": "waiting",
+                        "message": f"Awaiting merge of Pull Request #{pr_number}.",
+                        "pr_url": pr_data.get("html_url"),
+                        "action_required": "merge_pr"
+                    }
+            finally:
+                db.close()
+
         if not repo_path or not current_branch:
-            raise ValueError("PHOENIX: Missing repo path or branch name in context")
+            # If no PR was created, we might be doing a local-only release (fallback)
+            self.logger.warning("PHOENIX: No repo path or branch found. Falling back to notification only.")
+            # ... existing local merge logic ...
 
         # 1. Merge to release branch (local git)
         merge_success = self._merge_to_release(repo_path, current_branch, release_branch)

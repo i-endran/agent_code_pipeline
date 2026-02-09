@@ -82,6 +82,7 @@ If REJECTED, provide specific fix instructions for the FORGE agent.
                 "review_path": review_path,
                 "patch_path": patch_path,
                 "mr_url": mr_link,
+                "pull_number": mr_data.get("number") if mr_url else None,
                 "action": "merging"
             }
         else:

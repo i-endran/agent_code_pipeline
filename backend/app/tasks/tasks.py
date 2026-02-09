@@ -105,6 +105,18 @@ async def execute_pipeline(task_id: str):
             phoenix = PhoenixAgent(context["phoenix"], task_id)
             phoenix_results = await phoenix.run(context)
             context["phoenix_results"] = phoenix_results
+            
+            if phoenix_results.get("status") == "waiting":
+                task.status = TaskStatus.AWAITING_REVIEW # Use this for MR pending too
+                db.commit()
+                send_task_update(task_id, {
+                    "current_stage": "phoenix", 
+                    "status": "waiting", 
+                    "progress": 95, 
+                    "message": phoenix_results.get("message")
+                })
+                return # Pause execution
+
             send_task_update(task_id, {"current_stage": "phoenix", "status": "completed", "progress": 100, "message": "PHOENIX completed"})
 
         # Finalize
