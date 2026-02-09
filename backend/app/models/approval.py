@@ -21,6 +21,16 @@ class ApprovalCheckpoint(str, enum.Enum):
     PHOENIX_RELEASE = "phoenix_release"
 
 
+# Default priority per checkpoint stage (higher = more urgent)
+STAGE_PRIORITY = {
+    ApprovalCheckpoint.SCRIBE_OUTPUT: 2,
+    ApprovalCheckpoint.ARCHITECT_PLAN: 4,
+    ApprovalCheckpoint.FORGE_CODE: 6,
+    ApprovalCheckpoint.SENTINEL_REVIEW: 8,
+    ApprovalCheckpoint.PHOENIX_RELEASE: 10,
+}
+
+
 class ApprovalStatus(str, enum.Enum):
     """Approval request status."""
     PENDING = "pending"
@@ -55,6 +65,9 @@ class ApprovalRequest(Base):
     
     # Auto-approval settings
     auto_approve_on_timeout = Column(Boolean, default=False)
+    
+    # Priority (1-10, higher = more urgent, auto-assigned from stage)
+    priority = Column(Integer, default=5, index=True)
     
     # Relationships
     task = relationship("Task", backref="approval_requests")

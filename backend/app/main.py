@@ -21,7 +21,8 @@ from app.api import (
     connectors,
     mcp,
     webhooks,
-    approvals
+    approvals,
+    agent_queue
 )
 from app.db.database import engine, Base
 from app.services.logging_service import setup_logging
@@ -98,6 +99,7 @@ app.include_router(connectors.router, prefix="/api/connectors", tags=["Connector
 app.include_router(mcp.router, prefix="/api/mcp", tags=["MCP"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
 app.include_router(approvals.router, prefix="/api/approvals", tags=["Approvals"])
+app.include_router(agent_queue.router, prefix="/api/queues", tags=["Agent Queues"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 

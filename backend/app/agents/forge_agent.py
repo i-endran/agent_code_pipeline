@@ -2,6 +2,7 @@ import logging
 import subprocess
 import json
 from typing import Dict, Any
+from pathlib import Path
 from app.agents.base_agent import BaseAgent
 from app.services.repo_service import repo_service
 
@@ -80,6 +81,8 @@ USER NOTES: {forge_config.get("user_prompt", "")}
             "test_passed": test_passed,
             "commit_hash": commit_hash,
             "agent_state_id": self.state_id,
+            "artifact_paths": [],
+            "summary": f"Code implemented on branch {branch_name}, tests {'passed' if test_passed else 'failed'}",
             "changes_summary": forge_response[:500]
         }
     

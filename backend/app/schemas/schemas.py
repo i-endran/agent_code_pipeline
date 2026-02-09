@@ -300,6 +300,7 @@ class ApprovalRequestResponse(BaseModel):
     timeout_at: Optional[datetime]
     resolved_at: Optional[datetime]
     auto_approve_on_timeout: bool
+    priority: int = 5
     actions: List[ApprovalActionResponse] = []
     
     class Config:

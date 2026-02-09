@@ -58,7 +58,20 @@ class PhoenixAgent(BaseAgent):
             # ... existing local merge logic ...
 
         # 1. Merge to release branch (local git)
-        merge_success = self._merge_to_release(repo_path, current_branch, release_branch)
+        merge_result = self._merge_to_release(repo_path, current_branch, release_branch)
+        
+        if merge_result.get("conflicts"):
+            # Conflict detected — return conflict status for user resolution
+            return {
+                "status": "conflict",
+                "message": f"Merge conflicts detected: {', '.join(merge_result['conflicts'])}",
+                "conflicts": merge_result["conflicts"],
+                "artifact_paths": [changelog_path] if 'changelog_path' in dir() else [],
+                "summary": "Merge conflicts block release. Manual resolution required.",
+                "action_required": "resolve_conflicts"
+            }
+        
+        merge_success = merge_result.get("success", False)
         
         # 2. Generate Changelog
         prompt = f"""
@@ -98,21 +111,50 @@ Format the output for a Slack message.
             "message": "Release completed and notifications sent." if notification_sent else "Release completed (Manual notification required).",
             "merge_status": "merged" if merge_success else "failed",
             "changelog_path": changelog_path,
+            "artifact_paths": [changelog_path],
+            "summary": f"Release {'completed' if merge_success else 'failed'}. Changelog generated.",
             "notification_sent": notification_sent
         }
 
-    def _merge_to_release(self, repo_path: str, source: str, target: str) -> bool:
-        """Merges source branch into target release branch."""
+    def _merge_to_release(self, repo_path: str, source: str, target: str) -> dict:
+        """Merges source branch into target release branch. Returns merge result dict."""
         try:
             # Checkout target
             subprocess.run(["git", "checkout", target], cwd=repo_path, check=True)
             # Pull latest
             subprocess.run(["git", "pull", "origin", target], cwd=repo_path)
             # Merge
-            subprocess.run(["git", "merge", source], cwd=repo_path, check=True)
-            # Push (simulation if no remote access, but we try)
+            result = subprocess.run(
+                ["git", "merge", source],
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode != 0:
+                # Check for merge conflicts
+                conflict_result = subprocess.run(
+                    ["git", "diff", "--name-only", "--diff-filter=U"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    text=True
+                )
+                conflicting_files = [f.strip() for f in conflict_result.stdout.strip().split("\n") if f.strip()]
+                
+                if conflicting_files:
+                    self.logger.warning(f"PHOENIX: Merge conflicts in: {conflicting_files}")
+                    # Abort the merge to leave a clean state
+                    subprocess.run(["git", "merge", "--abort"], cwd=repo_path)
+                    return {"success": False, "conflicts": conflicting_files}
+                else:
+                    self.logger.error(f"PHOENIX: Merge failed (non-conflict): {result.stderr}")
+                    return {"success": False, "conflicts": []}
+            
+            # Push
             subprocess.run(["git", "push", "origin", target], cwd=repo_path)
-            return True
+            return {"success": True, "conflicts": []}
+            
         except subprocess.CalledProcessError as e:
             self.logger.error(f"PHOENIX: Merge failed: {e}")
-            return False
+            return {"success": False, "conflicts": []}
+

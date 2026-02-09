@@ -83,6 +83,8 @@ If REJECTED, provide specific fix instructions for the FORGE agent.
                 "patch_path": patch_path,
                 "mr_url": mr_link,
                 "pull_number": mr_data.get("number") if mr_url else None,
+                "artifact_paths": [review_path, patch_path],
+                "summary": "Code review approved. MR created for merging.",
                 "action": "merging"
             }
         else:
@@ -91,6 +93,8 @@ If REJECTED, provide specific fix instructions for the FORGE agent.
                 "status": "fix_needed",
                 "message": "Review rejected. Fixes required.",
                 "review_path": review_path,
+                "artifact_paths": [review_path],
+                "summary": "Code review rejected. Changes need rework.",
                 "action": "reworking"
             }
 

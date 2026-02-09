@@ -57,6 +57,8 @@ Your plan MUST specify:
             "status": "success",
             "message": "Technical plan generated",
             "plan_path": path,
+            "artifact_paths": [path],
+            "summary": "Technical implementation plan generated from codebase analysis",
             "repo_analyzed": bool(repo_path)
         }
 

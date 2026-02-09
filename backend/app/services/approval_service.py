@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
-from app.models.approval import ApprovalRequest, ApprovalAction, ApprovalCheckpoint, ApprovalStatus
+from app.models.approval import ApprovalRequest, ApprovalAction, ApprovalCheckpoint, ApprovalStatus, STAGE_PRIORITY
 from app.models.models import Task, TaskStatus
 from app.utils.task_utils import send_task_update
 
@@ -51,7 +51,9 @@ class ApprovalService:
         # Calculate timeout
         timeout_at = datetime.utcnow() + timedelta(minutes=timeout_minutes)
         
-        # Create approval request
+        # Create approval request with auto-assigned priority
+        priority = STAGE_PRIORITY.get(checkpoint, 5)
+        
         approval_request = ApprovalRequest(
             task_id=task_id,
             checkpoint=checkpoint,
@@ -61,7 +63,8 @@ class ApprovalService:
             summary=summary,
             details=details,
             timeout_at=timeout_at,
-            auto_approve_on_timeout=auto_approve_on_timeout
+            auto_approve_on_timeout=auto_approve_on_timeout,
+            priority=priority
         )
         
         db.add(approval_request)
@@ -277,7 +280,10 @@ class ApprovalService:
         if checkpoint:
             query = query.filter(ApprovalRequest.checkpoint == checkpoint)
         
-        return query.order_by(ApprovalRequest.created_at.desc()).all()
+        return query.order_by(
+            ApprovalRequest.priority.desc(),  # Highest priority first
+            ApprovalRequest.created_at.asc()   # Oldest first within same priority
+        ).all()
     
     def _resume_pipeline(self, db: Session, task_id: str, checkpoint: ApprovalCheckpoint):
         """Resume pipeline execution after approval."""

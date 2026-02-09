@@ -6,9 +6,11 @@ from app.celery_app import celery_app
 from app.db.database import SessionLocal
 from app.models.models import Task, TaskStatus, AgentStage, StageLog, Repository
 from app.models.approval import ApprovalCheckpoint
+from app.models.agent_queue import QueueItemStatus
 from app.services.repo_service import repo_service
 from app.services.artifact_service import artifact_service
 from app.services.approval_service import approval_service
+from app.services.agent_queue_service import agent_queue_service
 from app.utils.task_utils import send_task_update
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,14 @@ async def execute_pipeline(task_id: str):
             )
             return  # Pause execution, will resume after approval
 
+        # Enqueue to ARCHITECT
+        if context.get("architect", {}).get("enabled"):
+            agent_queue_service.enqueue(
+                db, task_id, AgentStage.ARCHITECT, context,
+                priority=context.get("architect", {}).get("priority", 5),
+                reason="pipeline_flow"
+            )
+
         # 3. ARCHITECT Stage
         if context.get("architect", {}).get("enabled"):
             from app.agents.architect_agent import ArchitectAgent
@@ -109,6 +119,14 @@ async def execute_pipeline(task_id: str):
                 )
                 return  # Pause execution
 
+            # Enqueue to FORGE
+            if context.get("forge", {}).get("enabled"):
+                agent_queue_service.enqueue(
+                    db, task_id, AgentStage.FORGE, context,
+                    priority=context.get("forge", {}).get("priority", 5),
+                    reason="pipeline_flow"
+                )
+
         # 4. FORGE Stage
         if context.get("forge", {}).get("enabled"):
             from app.agents.forge_agent import ForgeAgent
@@ -132,6 +150,14 @@ async def execute_pipeline(task_id: str):
                     auto_approve_on_timeout=False
                 )
                 return  # Pause execution
+
+            # Enqueue to SENTINEL
+            if context.get("sentinel", {}).get("enabled"):
+                agent_queue_service.enqueue(
+                    db, task_id, AgentStage.SENTINEL, context,
+                    priority=context.get("sentinel", {}).get("priority", 5),
+                    reason="pipeline_flow"
+                )
 
         # 5. SENTINEL Stage
         if context.get("sentinel", {}).get("enabled"):
@@ -158,7 +184,22 @@ async def execute_pipeline(task_id: str):
                 return  # Pause execution
             
             if sentinel_results.get("action") == "reworking":
-                send_task_update(task_id, {"message": "Fixes required. Routing back to FORGE (simulation)..."})
+                send_task_update(task_id, {"message": "Fixes required. Re-enqueuing to FORGE with boosted priority..."})
+                # Re-enqueue to FORGE with boosted priority
+                agent_queue_service.enqueue(
+                    db, task_id, AgentStage.FORGE, context,
+                    priority=min(10, context.get("forge", {}).get("priority", 5) + 2),
+                    reason="review_bump"
+                )
+                return  # Exit current pipeline flow
+
+            # Enqueue to PHOENIX
+            if context.get("phoenix", {}).get("enabled"):
+                agent_queue_service.enqueue(
+                    db, task_id, AgentStage.PHOENIX, context,
+                    priority=context.get("phoenix", {}).get("priority", 5),
+                    reason="pipeline_flow"
+                )
 
         # 6. PHOENIX Stage
         if context.get("phoenix", {}).get("enabled"):
@@ -268,5 +309,46 @@ def check_approval_timeouts():
     try:
         timed_out = approval_service.check_timeouts(db)
         logger.info(f"Checked approval timeouts: {len(timed_out)} timed out")
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.process_agent_queue")
+def process_agent_queue(agent_stage: str):
+    """
+    Dequeue and process the highest-priority item from an agent's queue.
+    
+    Args:
+        agent_stage: Agent stage to process (scribe, architect, forge, etc.)
+    """
+    db = SessionLocal()
+    try:
+        stage = AgentStage(agent_stage)
+        item = agent_queue_service.dequeue(db, stage)
+        
+        if not item:
+            logger.info(f"No items in {agent_stage} queue")
+            return
+        
+        logger.info(f"Processing queue item {item.id} for {agent_stage} (task {item.task_id}, priority {item.priority})")
+        
+        try:
+            # Run the pipeline from the queued context
+            asyncio.run(execute_pipeline(item.task_id))
+            agent_queue_service.mark_done(db, item.id)
+        except Exception as e:
+            logger.error(f"Queue item {item.id} failed: {e}")
+            agent_queue_service.mark_failed(db, item.id, str(e))
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.apply_queue_aging")
+def apply_queue_aging():
+    """Periodic task to apply aging to all queued items."""
+    db = SessionLocal()
+    try:
+        updated = agent_queue_service.apply_aging(db)
+        logger.info(f"Queue aging pass: {updated} items updated")
     finally:
         db.close()

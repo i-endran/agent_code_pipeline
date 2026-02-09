@@ -36,8 +36,17 @@ The output should be high-quality markdown.
             results[doc_type] = path
             self.logger.info(f"SCRIBE: Generated {doc_type} and saved to {path}")
 
+        # Validate outputs against guardrails
+        for doc_type, content_text in list(results.items()):
+            if not self.validate_output(content_text if isinstance(content_text, str) else ""):
+                self.logger.warning(f"SCRIBE: Output validation failed for {doc_type}")
+
+        artifact_paths = list(results.values())
+
         return {
             "status": "success",
             "message": f"Generated {len(results)} documents",
-            "artifacts": results
+            "artifacts": results,
+            "artifact_paths": artifact_paths,
+            "summary": f"Generated {', '.join(selected_docs)} documents"
         }
