@@ -37,6 +37,8 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        padding-bottom: 0.15em;
+        line-height: 1.4;
     }
 
     /* Agent Box - Original Styling */
@@ -58,11 +60,23 @@
         transform: translateY(-5px);
         box-shadow: 0 10px 30px var(--agent-box-glow);
         border-color: #667eea;
+        z-index: 10;
     }
 
     .agent-box.enabled {
         border-color: #38ef7d;
         box-shadow: 0 0 20px rgba(56, 239, 125, 0.2);
+    }
+
+    .agent-box.locked {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .agent-box.locked:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: var(--agent-box-border);
     }
 
     /* Agent Icon */
@@ -127,6 +141,11 @@
 
     .toggle-switch.active .toggle-slider {
         transform: translateX(1.5rem);
+    }
+
+    .toggle-switch.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
 
     /* Configure Button */

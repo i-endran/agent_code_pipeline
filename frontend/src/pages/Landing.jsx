@@ -3,7 +3,6 @@ import {
     DocumentTextIcon,
     CubeIcon,
     CodeBracketIcon,
-    ChatBubbleLeftRightIcon,
     ShieldCheckIcon,
     RocketLaunchIcon,
     ChartBarIcon
@@ -32,13 +31,6 @@ const agents = [
         tokens: { input: 5000, output: 4000 },
     },
     {
-        id: 'herald',
-        name: 'HERALD',
-        role: 'MR Creator',
-        icon: ChatBubbleLeftRightIcon,
-        tokens: { input: 1500, output: 1000 },
-    },
-    {
         id: 'sentinel',
         name: 'SENTINEL',
         role: 'Code Reviewer',
@@ -55,7 +47,8 @@ const agents = [
 ];
 
 export default function Landing() {
-    const [enabledAgents, setEnabledAgents] = useState(new Set(['scribe', 'architect', 'forge', 'herald']));
+    // Start with no agents selected by default
+    const [enabledAgents, setEnabledAgents] = useState(new Set());
     const [showModal, setShowModal] = useState(null);
     const [showTokenDashboard, setShowTokenDashboard] = useState(false);
 
@@ -125,7 +118,7 @@ export default function Landing() {
     }, [enabledAgents]);
 
     return (
-        <div className="pt-6 pb-8">
+        <div className="pt-8 pb-8">
             {/* SVG Gradient Definition for Icons */}
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>
@@ -138,16 +131,16 @@ export default function Landing() {
 
             {/* Hero Section - Fixed line-height for text clipping */}
             <header className="mb-12 text-center">
-                <h1 className="text-4xl font-bold mb-3 text-gradient leading-relaxed">
+                <h1 className="text-4xl font-bold mb-3 text-gradient">
                     AI Agent Pipeline
                 </h1>
                 <p className="text-gray-400 text-sm">
-                    Configure and deploy 6 specialized agents to automate your SDLC
+                    Configure and deploy 5 specialized agents to automate your SDLC
                 </p>
             </header>
 
             {/* Agent Pipeline - Added more top padding for hover */}
-            <div className="mb-10 overflow-visible pt-4">
+            <div className="mb-10 overflow-visible pt-6">
                 <div className="flex items-start justify-center gap-2 min-w-max px-4">
                     {agents.map((agent, index) => {
                         const isEnabled = enabledAgents.has(agent.id);
