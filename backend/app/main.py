@@ -19,13 +19,18 @@ from app.api import (
     artifacts,
     audit,
     connectors,
+    connectors,
     mcp,
-    webhooks,
+    webhooks as incoming_webhooks,
     approvals,
-    agent_queue
+    agent_queue,
+    system_config,
+    webhooks_crud,
+    agent_mapping
 )
-from app.db.database import engine, Base
+from app.db.database import engine, Base, SessionLocal
 from app.services.logging_service import setup_logging
+from app.services.config_service import config_service
 
 # Initialize logging
 setup_logging(log_type="api")
@@ -39,7 +44,17 @@ async def lifespan(app: FastAPI):
     
     # Create database tables
     Base.metadata.create_all(bind=engine)
+    # Create database tables
+    Base.metadata.create_all(bind=engine)
     print("Database tables created")
+    
+    # Seed default configuration
+    db = SessionLocal()
+    try:
+        config_service.seed_defaults(db)
+        print("System configuration seeded")
+    finally:
+        db.close()
     
     yield
     
@@ -97,9 +112,12 @@ app.include_router(artifacts.router, prefix="/api/artifacts", tags=["Artifacts"]
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
 app.include_router(mcp.router, prefix="/api/mcp", tags=["MCP"])
-app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
+app.include_router(incoming_webhooks.router, prefix="/api/webhooks", tags=["Incoming Webhooks"])
+app.include_router(webhooks_crud.router, prefix="/api/outbound-webhooks", tags=["Outbound Webhooks"])
+app.include_router(agent_mapping.router, prefix="/api/agents", tags=["Agent Mapping"])
 app.include_router(approvals.router, prefix="/api/approvals", tags=["Approvals"])
 app.include_router(agent_queue.router, prefix="/api/queues", tags=["Agent Queues"])
+app.include_router(system_config.router, prefix="/api/config", tags=["System Config"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 

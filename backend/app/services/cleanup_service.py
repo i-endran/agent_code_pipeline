@@ -5,6 +5,8 @@ import logging
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List
+from app.services.config_service import config_service
+from app.db.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +28,24 @@ class CleanupService:
         Runs all cleanup tasks.
         
         Args:
-            max_age_days: Files older than this will be deleted.
+        Args:
+            max_age_days: Default max age if not in config.
         """
+        # Get dynamic configuration
+        db = SessionLocal()
+        try:
+            enabled = config_service.get_bool(db, "cleanup_enabled", True)
+            if not enabled:
+                logger.info("Cleanup is disabled in system config.")
+                return
+
+            # Override max_age_days from config if present
+            config_days = config_service.get_int(db, "cleanup_interval_days", 0)
+            if config_days > 0:
+                max_age_days = config_days
+        finally:
+            db.close()
+
         logger.info(f"Starting periodic cleanup (max_age={max_age_days} days)...")
         
         self.cleanup_temp_files(max_age_days)

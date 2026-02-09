@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     SparklesIcon,
     KeyIcon,
@@ -7,32 +9,42 @@ import {
     PlusIcon
 } from '@heroicons/react/24/outline';
 
-const models = [
-    {
-        id: 1,
-        name: 'Gemini 2.0 Pro',
-        provider: 'Google',
-        status: 'active',
-        latency: '1.2s',
-        throughput: '45 tokens/s',
-        description: 'Optimized for complex reasoning and technical planning.',
-        tags: ['Best for Architect', 'Best for Sentinel']
-    },
-    {
-        id: 2,
-        name: 'Gemini 2.0 Flash',
-        provider: 'Google',
-        status: 'active',
-        latency: '0.4s',
-        throughput: '120 tokens/s',
-        description: 'Ultra-fast model for implementation and documentation tasks.',
-        tags: ['Best for Scribe', 'Best for Forge']
-    },
-];
+const API_BASE = 'http://localhost:8000/api';
 
 export default function Models() {
+    const [agents, setAgents] = useState({});
+    const [tokenStats, setTokenStats] = useState({ total_tokens: 0, total_cost: 0 });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAgents = async () => {
+            try {
+                const response = await axios.get(`${API_BASE}/agents/status`);
+                setAgents(response.data.agents);
+                setTokenStats({
+                    total_tokens: response.data.total_estimated_tokens,
+                    total_cost: response.data.total_estimated_cost
+                });
+                setLoading(false);
+            } catch (error) {
+                console.error("Failed to fetch agents:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, []);
+
+    if (loading) return <div className="p-8 text-gray-400">Loading models...</div>;
+
+    // Transform agents object to array for easier mapping
+    const agentList = Object.entries(agents).map(([key, config]) => ({
+        id: key,
+        ...config
+    }));
+
     return (
-        <div className="pt-8 w-full max-w-6xl mx-auto">
+        <div className="pt-8 w-full max-w-6xl mx-auto px-4">
             <header className="mb-10 flex justify-between items-end">
                 <div>
                     <h1 className="text-3xl font-bold text-gradient mb-2">AI Models</h1>
@@ -52,32 +64,33 @@ export default function Models() {
                     </h2>
 
                     <div className="space-y-6">
-                        {models.map(model => (
-                            <div key={model.id} className="p-4 bg-[#1a1b23] rounded-xl border border-[#2d3748] hover:border-[#667eea]/50 transition-all">
+                        {agentList.map(agent => (
+                            <div key={agent.id} className="p-4 bg-[#1a1b23] rounded-xl border border-[#2d3748] hover:border-[#667eea]/50 transition-all">
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
-                                        <h3 className="text-lg font-bold text-white mb-1">{model.name}</h3>
-                                        <p className="text-xs text-gray-500">{model.description}</p>
+                                        <h3 className="text-lg font-bold text-white mb-1 capitalize">{agent.name} Agent</h3>
+                                        <p className="text-xs text-gray-500">{agent.description}</p>
                                     </div>
                                     <span className="status-badge status-completed">Active</span>
                                 </div>
 
                                 <div className="flex gap-4 mb-4">
-                                    {model.tags.map(tag => (
-                                        <span key={tag} className="text-[10px] text-gray-400 border border-[#2d3748] px-2 py-0.5 rounded">
-                                            {tag}
-                                        </span>
-                                    ))}
+                                    <span className="text-[10px] text-gray-400 border border-[#2d3748] px-2 py-0.5 rounded uppercase">
+                                        {agent.provider}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 border border-[#2d3748] px-2 py-0.5 rounded">
+                                        {agent.model}
+                                    </span>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#2d3748]">
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                         <BoltIcon className="w-4 h-4 text-blue-400" />
-                                        Latency: <span className="text-gray-300 font-bold">{model.latency}</span>
+                                        Max Tokens: <span className="text-gray-300 font-bold">{agent.max_tokens}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-xs text-gray-500">
                                         <AdjustmentsHorizontalIcon className="w-4 h-4 text-green-400" />
-                                        Throughput: <span className="text-gray-300 font-bold">{model.throughput}</span>
+                                        Temp: <span className="text-gray-300 font-bold">{agent.temperature}</span>
                                     </div>
                                 </div>
                             </div>
@@ -99,6 +112,16 @@ export default function Models() {
                             <div className="flex items-center justify-between text-xs p-2 bg-[#1a1b23] rounded border border-[#2d3748]">
                                 <span className="text-gray-400">Context Window Warn</span>
                                 <span className="text-gray-500 font-bold">85%</span>
+                            </div>
+                            <div className="pt-4 mt-2 border-t border-[#2d3748]">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Est. Token Usage</span>
+                                    <span className="text-sm font-bold text-white">{tokenStats.total_tokens.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-gray-400">Est. Cost</span>
+                                    <span className="text-sm font-bold text-green-400">${tokenStats.total_cost.toFixed(4)}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
