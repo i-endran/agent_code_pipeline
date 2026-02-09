@@ -34,6 +34,8 @@ class AgentInputBase(BaseModel):
     """Base schema for agent inputs."""
     enabled: bool = False
     user_prompt: Optional[str] = None
+    approval_required: bool = False
+    approval_timeout_minutes: int = 60
 
 
 class ScribeInput(AgentInputBase):
@@ -239,5 +241,108 @@ class MCPServerResponse(MCPServerBase):
     created_at: datetime
     tools: List[ToolResponse] = []
 
+    class Config:
+        from_attributes = True
+
+
+# ============ Approval Schemas (Phase 5: HITL) ============
+
+class ApprovalCheckpointEnum(str, Enum):
+    """Approval checkpoint enum for API."""
+    SCRIBE_OUTPUT = "scribe_output"
+    ARCHITECT_PLAN = "architect_plan"
+    FORGE_CODE = "forge_code"
+    SENTINEL_REVIEW = "sentinel_review"
+    PHOENIX_RELEASE = "phoenix_release"
+
+
+class ApprovalStatusEnum(str, Enum):
+    """Approval status enum for API."""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    TIMEOUT = "timeout"
+
+
+class ApprovalActionCreate(BaseModel):
+    """Schema for creating an approval action (approve/reject)."""
+    action: ApprovalStatusEnum
+    comment: Optional[str] = None
+    feedback: Optional[Dict[str, Any]] = None
+    user_name: Optional[str] = "System"
+
+
+class ApprovalActionResponse(BaseModel):
+    """Schema for approval action response."""
+    id: int
+    approval_request_id: int
+    action: ApprovalStatusEnum
+    user_name: str
+    comment: Optional[str]
+    feedback: Optional[Dict[str, Any]]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class ApprovalRequestResponse(BaseModel):
+    """Schema for approval request response."""
+    id: int
+    task_id: str
+    checkpoint: ApprovalCheckpointEnum
+    agent_name: str
+    status: ApprovalStatusEnum
+    artifact_paths: List[str]
+    summary: Optional[str]
+    details: Optional[Dict[str, Any]]
+    created_at: datetime
+    timeout_at: Optional[datetime]
+    resolved_at: Optional[datetime]
+    auto_approve_on_timeout: bool
+    actions: List[ApprovalActionResponse] = []
+    
+    class Config:
+        from_attributes = True
+
+
+class ApprovalDashboardResponse(BaseModel):
+    """Dashboard view of approval requests."""
+    pending_count: int
+    approved_count: int
+    rejected_count: int
+    timeout_count: int
+    pending_requests: List[ApprovalRequestResponse]
+    recent_actions: List[ApprovalActionResponse]
+
+
+class NotificationPreferenceCreate(BaseModel):
+    """Schema for creating notification preferences."""
+    user_id: str
+    email_enabled: bool = True
+    email_address: Optional[str] = None
+    slack_enabled: bool = False
+    slack_webhook_url: Optional[str] = None
+    teams_enabled: bool = False
+    teams_webhook_url: Optional[str] = None
+    notify_on_request: bool = True
+    notify_on_timeout_warning: bool = True
+    timeout_warning_minutes: int = 15
+
+
+class NotificationPreferenceResponse(BaseModel):
+    """Schema for notification preference response."""
+    id: int
+    user_id: str
+    email_enabled: bool
+    email_address: Optional[str]
+    slack_enabled: bool
+    teams_enabled: bool
+    notify_on_request: bool
+    notify_on_timeout_warning: bool
+    timeout_warning_minutes: int
+    created_at: datetime
+    updated_at: datetime
+    
     class Config:
         from_attributes = True

@@ -12,15 +12,16 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.api import (
-    pipelines, 
-    tasks, 
-    agents, 
-    websocket, 
-    artifacts, 
+    pipelines,
+    tasks,
+    agents,
+    websocket,
+    artifacts,
     audit,
     connectors,
     mcp,
-    webhooks
+    webhooks,
+    approvals
 )
 from app.db.database import engine, Base
 from app.services.logging_service import setup_logging
@@ -96,6 +97,7 @@ app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
 app.include_router(mcp.router, prefix="/api/mcp", tags=["MCP"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
+app.include_router(approvals.router, prefix="/api/approvals", tags=["Approvals"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 
