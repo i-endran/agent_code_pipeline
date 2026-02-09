@@ -1,0 +1,269 @@
+/* SDLC Agent Pipeline - Custom Styles */
+
+:root {
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --agent-box-bg: rgba(30, 32, 40, 0.9);
+    --agent-box-border: rgba(102, 126, 234, 0.3);
+    --agent-box-glow: rgba(102, 126, 234, 0.2);
+}
+
+/* Typography */
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Pipeline Container */
+.pipeline-container {
+    overflow-x: auto;
+    padding: 2rem 0;
+}
+
+/* Agent Box */
+.agent-box {
+    background: var(--agent-box-bg);
+    border: 1px solid var(--agent-box-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 160px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.agent-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px var(--agent-box-glow);
+    border-color: #667eea;
+}
+
+.agent-box.enabled {
+    border-color: #38ef7d;
+    box-shadow: 0 0 20px rgba(56, 239, 125, 0.2);
+}
+
+.agent-box.configured {
+    border-left: 3px solid #38ef7d;
+}
+
+.agent-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.agent-name {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: #fff;
+}
+
+.agent-role {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+}
+
+.agent-toggle {
+    margin-bottom: 0.75rem;
+}
+
+.agent-toggle .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    cursor: pointer;
+}
+
+.agent-toggle .form-check-input:checked {
+    background-color: #38ef7d;
+    border-color: #38ef7d;
+}
+
+.agent-config-btn {
+    width: 100%;
+    font-size: 0.8rem;
+}
+
+.agent-config-btn:disabled {
+    opacity: 0.5;
+}
+
+/* Pipeline Connector */
+.pipeline-connector {
+    color: #667eea;
+    font-size: 1.5rem;
+    padding: 0 0.5rem;
+    opacity: 0.5;
+}
+
+.pipeline-connector.active {
+    opacity: 1;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Token Estimation */
+#token-estimate-container .estimate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#token-estimate-container .estimate-row:last-child {
+    border-bottom: none;
+}
+
+#token-estimate-container .estimate-total {
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid rgba(102, 126, 234, 0.5);
+}
+
+/* Task Cards */
+.task-card {
+    background: rgba(30, 32, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+.task-card .task-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.task-card .task-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.task-card .task-progress {
+    height: 6px;
+    border-radius: 3px;
+}
+
+.task-card .task-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.status-processing { background: rgba(13, 110, 253, 0.2); color: #0d6efd; }
+.status-awaiting_review { background: rgba(102, 126, 234, 0.2); color: #667eea; }
+.status-awaiting_release { background: rgba(118, 75, 162, 0.2); color: #764ba2; }
+.status-completed { background: rgba(56, 239, 125, 0.2); color: #38ef7d; }
+.status-failed { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+.status-cancelled { background: rgba(108, 117, 125, 0.2); color: #6c757d; }
+
+/* Dashboard */
+.dashboard-stat {
+    background: rgba(30, 32, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.dashboard-stat .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dashboard-stat .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .pipeline-container .row {
+        flex-wrap: nowrap;
+    }
+    
+    .agent-box {
+        width: 140px;
+        padding: 1rem;
+    }
+    
+    .agent-icon {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .pipeline-container {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .pipeline-container .row {
+        min-width: 1000px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+}

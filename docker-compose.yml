@@ -1,0 +1,102 @@
+# SDLC Agent Pipeline - Docker Compose
+# Provides RabbitMQ and optional services for development
+
+version: '3.8'
+
+services:
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: sdlc-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database (Production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: sdlc-postgres
+    profiles: ["prod"]  # Only starts with --profile prod
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sdlc
+      POSTGRES_PASSWORD: sdlc_password
+      POSTGRES_DB: sdlc_agents
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdlc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: sdlc-redis
+    profiles: ["prod"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Backend API (Production Docker deployment)
+  # api:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: sdlc-api
+  #   profiles: ["prod"]
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     APP_ENV: prod
+  #     DATABASE_URL: postgresql://sdlc:sdlc_password@postgres:5432/sdlc_agents
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672//
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+
+  # Celery Worker (Production Docker deployment)
+  # worker:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: sdlc-worker
+  #   profiles: ["prod"]
+  #   command: celery -A app.celery_app worker --loglevel=info --concurrency=5
+  #   environment:
+  #     APP_ENV: prod
+  #     DATABASE_URL: postgresql://sdlc:sdlc_password@postgres:5432/sdlc_agents
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672//
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+  redis_data:
+
+# Usage:
+# Development (RabbitMQ only):
+#   docker-compose up -d
+#
+# Production (all services):
+#   docker-compose --profile prod up -d
