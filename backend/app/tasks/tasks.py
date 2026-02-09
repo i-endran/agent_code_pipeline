@@ -134,3 +134,9 @@ async def execute_pipeline(task_id: str):
 def run_pipeline(task_id: str):
     """Celery task wrapper for pipeline execution."""
     asyncio.run(execute_pipeline(task_id))
+
+@celery_app.task(name="app.tasks.periodic_cleanup")
+def periodic_cleanup(max_age_days: int = 7):
+    """Celery task for periodic storage cleanup."""
+    from app.services.cleanup_service import cleanup_service
+    cleanup_service.run_cleanup(max_age_days=max_age_days)
