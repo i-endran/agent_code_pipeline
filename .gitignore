@@ -71,3 +71,6 @@ celerybeat.pid
 
 # Docker
 .docker/
+
+# Storage (logs, repos, artifacts, audit trails)
+backend/storage/

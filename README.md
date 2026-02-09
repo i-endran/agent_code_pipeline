@@ -1,25 +1,34 @@
 # SDLC Agent Pipeline Tool
 
-An internal tool for deploying AI agents across the Software Development Lifecycle (SDLC), enabling automated requirement-to-release workflows.
+An AI-powered SDLC automation tool that orchestrates 5 specialized agents (powered by Google Gemini) to automate workflows from requirements to release, with full audit trail capabilities.
 
-## The 6 Agents
+## The 5 Agents
 
-| Agent | Codename | Description |
-|-------|----------|-------------|
-| 1 | **SCRIBE** | Transforms requirements into feature documents |
-| 2 | **ARCHITECT** | Converts feature docs into implementation plans |
-| 3 | **FORGE** | Implements code changes, runs tests |
-| 4 | **HERALD** | Creates merge requests, notifies CI/CD |
-| 5 | **SENTINEL** | Reviews code quality, routes back if needed |
-| 6 | **PHOENIX** | Manages releases, notifies stakeholders |
+| Agent | Codename | Model | Description |
+|-------|----------|-------|-------------|
+| 1 | **SCRIBE** | gemini-2.0-flash | Transforms requirements into feature documents (Feature Doc, DPIA, Data Flow) |
+| 2 | **ARCHITECT** | gemini-2.0-pro | Analyzes repositories and creates implementation plans |
+| 3 | **FORGE** | gemini-2.0-flash | Implements code changes, commits with audit metadata |
+| 4 | **SENTINEL** | gemini-2.0-pro | Reviews code quality, creates MRs (merged HERALD functionality) |
+| 5 | **PHOENIX** | gemini-2.0-flash | Manages releases, notifies stakeholders |
+
+> **Note**: HERALD agent functionality has been merged into SENTINEL.
+
+## Key Features
+
+✅ **Automated SDLC Pipeline**: From requirements to release  
+✅ **Full Audit Trail**: Every agent execution tracked with state snapshots  
+✅ **Git Integration**: Commits include agent metadata for traceability  
+✅ **Repository Management**: Automated cloning, branching, and artifact storage  
+✅ **Real-time Updates**: WebSocket status notifications  
+✅ **Structured Logging**: Daily rotation with task correlation IDs
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.11+
-- Node.js 18+ (for frontend dev server)
-- RabbitMQ (for task queue)
-- Redis (optional, for caching)
+- Docker (for RabbitMQ)
+- Google Gemini API Key
 
 ### Backend Setup
 
@@ -39,9 +48,9 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment (dev/prod)
-set APP_ENV=dev  # Windows
-export APP_ENV=dev  # Linux/Mac
+# Create .env file
+echo "GOOGLE_API_KEY=your_key_here" > .env
+echo "STORAGE_PATH=./storage" >> .env
 
 # Run database migrations
 python -m app.db.migrate
@@ -50,11 +59,11 @@ python -m app.db.migrate
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Celery Workers
+### Start RabbitMQ & Celery Worker
 
 ```bash
 # Start RabbitMQ (Docker)
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+docker-compose up -d
 
 # Start Celery worker (in separate terminal)
 cd backend
@@ -63,18 +72,22 @@ celery -A app.celery_app worker --loglevel=info --concurrency=2
 
 ### Frontend Setup
 
+**Current (Phase 2)**:
 ```bash
-# For development, simply open in browser
+# Simply open in browser
 start frontend/index.html  # Windows
 open frontend/index.html   # Mac
+```
 
-# Or use a simple HTTP server
+**Phase 3 (React + Tailwind - In Progress)**:
+```bash
 cd frontend
-python -m http.server 3000
+npm install
+npm run dev
 ```
 
 ### Access Points
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:3000 (or file:// for Phase 2)
 - **Backend API**: http://localhost:8000
 - **Swagger Docs**: http://localhost:8000/docs
 - **RabbitMQ Admin**: http://localhost:15672 (guest/guest)
@@ -84,8 +97,11 @@ python -m http.server 3000
 Create `.env` file in `backend/`:
 
 ```env
-# Environment: dev | prod
-APP_ENV=dev
+# Google Gemini API Key (Required)
+GOOGLE_API_KEY=your_gemini_api_key_here
+
+# Storage Path
+STORAGE_PATH=./storage
 
 # Database
 DATABASE_URL=sqlite:///./dev.db
@@ -94,11 +110,6 @@ DATABASE_URL=sqlite:///./dev.db
 # RabbitMQ
 RABBITMQ_URL=amqp://guest:guest@localhost:5672//
 
-# LLM API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GOOGLE_API_KEY=...
-
 # Worker limits
 MAX_WORKERS=5
 ```
@@ -106,17 +117,63 @@ MAX_WORKERS=5
 ## Project Structure
 
 ```
-├── backend/           # FastAPI + Celery
-├── frontend/          # HTML + Bootstrap + JS
-├── docs/              # Architecture docs
-├── docker-compose.yml # RabbitMQ + services
+├── backend/
+│   ├── app/
+│   │   ├── agents/          # Agent implementations (SCRIBE, ARCHITECT, etc.)
+│   │   ├── api/             # REST endpoints + WebSocket
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── services/        # RepoService, ArtifactService, AuditService
+│   │   └── tasks/           # Celery task orchestration
+│   ├── config/
+│   │   └── agents.yaml      # Agent configurations
+│   ├── storage/             # Generated at runtime (gitignored)
+│   │   ├── logs/            # Structured logs
+│   │   ├── repos/           # Cloned repositories
+│   │   ├── artifacts/       # Generated documents
+│   │   ├── audit/           # Agent state snapshots
+│   │   └── patches/         # Code review diffs
+│   └── requirements.txt
+├── frontend/                # React + Tailwind (Phase 3)
+├── docs/
+│   ├── architecture.md
+│   └── agents.md
+├── docker-compose.yml       # RabbitMQ
 └── README.md
 ```
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) - System design and patterns
-- [Agents](docs/agents.md) - Agent specifications and prompts
+- [Architecture](docs/architecture.md) - System design, data flow, scalability
+- [Agents](docs/agents.md) - Agent specifications, guardrails, audit trail
+
+## Agent Audit Trail
+
+Every agent execution is automatically tracked:
+
+```bash
+# Get all agent executions for a task
+curl http://localhost:8000/api/audit/task/{task_id}
+
+# Get full agent config by state ID
+curl http://localhost:8000/api/audit/state/{state_id}
+
+# Find agent state from Git commit (Forge only)
+curl http://localhost:8000/api/audit/commit/{commit_hash}
+```
+
+**Example Git Commit with Metadata**:
+```
+[FORGE-AI] Implemented feature based on technical plan
+
+Agent-State-ID: a3b8d1b6-0b3b-4b1a-9c1a-1a2b3c4d5e6f
+Model: gemini-2.0-flash
+Temperature: 0.2
+Task: task_12345
+Timestamp: 2026-02-10T01:05:00.123456
+Provider: google
+
+Generated by AI Agent Pipeline
+```
 
 ## Running Tests
 
@@ -124,6 +181,18 @@ MAX_WORKERS=5
 cd backend
 pytest tests/ -v --cov=app
 ```
+
+## Development Phases
+
+- ✅ **Phase 1**: Foundation (FastAPI, Celery, RabbitMQ, basic frontend)
+- ✅ **Phase 2A**: Infrastructure (Structured logging, Gemini integration)
+- ✅ **Phase 2B**: Storage (Repository & artifact services)
+- ✅ **Phase 2C**: Agents (SCRIBE, ARCHITECT, FORGE, SENTINEL)
+- ✅ **Phase 2D**: Audit Trail (State snapshots, Git metadata)
+- 🚧 **Phase 3**: React + Tailwind frontend migration
+- 📋 **Phase 4**: Connectors, Tools, MCP integration
+- 📋 **Phase 5**: Human-in-the-Loop workflows
+- 📋 **Phase 6**: PHOENIX full implementation, cleanup
 
 ## License
 
