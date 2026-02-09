@@ -17,21 +17,21 @@ export default function Sidebar() {
     const location = useLocation();
 
     return (
-        <aside className="w-64 bg-dark-800 border-r border-dark-700 h-screen fixed left-0 top-0">
-            <div className="p-6">
-                <h1 className="text-2xl font-bold text-primary-500">SDLC Pipeline</h1>
+        <aside className="w-64 bg-gradient-to-b from-black to-dark-800 border-r border-dark-700 h-screen fixed left-0 top-0">
+            <div className="p-6 border-b border-dark-700">
+                <h1 className="text-2xl font-bold text-gradient">SDLC Pipeline</h1>
                 <p className="text-xs text-gray-500 mt-1">AI Agent Automation</p>
             </div>
 
-            <nav className="px-4">
+            <nav className="px-4 mt-6">
                 {navItems.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all ${isActive
-                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/50'
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 ${isActive
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/50'
                                     : 'text-gray-400 hover:bg-dark-700 hover:text-white'
                                 }`}
                         >

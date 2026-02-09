@@ -3,29 +3,104 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-dark-900 text-gray-100 font-sans antialiased;
-  }
+    body {
+        @apply bg-black text-gray-100 font-sans antialiased;
+    }
+
+    * {
+        @apply transition-colors duration-200;
+    }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors font-medium;
-  }
-  
-  .btn-secondary {
-    @apply bg-dark-700 hover:bg-dark-600 text-gray-200 px-4 py-2 rounded-lg transition-colors font-medium;
-  }
-  
-  .card {
-    @apply bg-dark-800 border border-dark-700 rounded-xl p-6 shadow-lg;
-  }
-  
-  .input {
-    @apply w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
-  }
-  
-  .label {
-    @apply block text-sm font-medium text-gray-300 mb-2;
-  }
+    .btn-primary {
+        @apply bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-xl transition-all duration-300 font-medium shadow-lg shadow-blue-500/50 hover:shadow-blue-400/60 hover:scale-105;
+    }
+
+    .btn-secondary {
+        @apply bg-dark-700 hover:bg-dark-600 text-gray-200 px-6 py-3 rounded-xl transition-all duration-300 font-medium border border-dark-600 hover:border-dark-500;
+    }
+
+    .card {
+        @apply bg-gradient-to-br from-dark-800 to-dark-900 border border-dark-700 rounded-2xl p-6 shadow-2xl backdrop-blur-sm;
+    }
+
+    .input {
+        @apply w-full bg-dark-800/50 border border-dark-700 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm transition-all duration-200;
+    }
+
+    .label {
+        @apply block text-sm font-medium text-gray-300 mb-2;
+    }
+
+    /* Agent Card Styles */
+    .agent-card {
+        @apply relative bg-gradient-to-br from-gray-900 to-black border-2 rounded-2xl p-6 transition-all duration-500 cursor-pointer;
+    }
+
+    .agent-card.enabled {
+        @apply border-green-500 shadow-2xl;
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2);
+    }
+
+    .agent-card.disabled {
+        @apply border-gray-800 opacity-60 hover:opacity-80;
+    }
+
+    .agent-card:hover {
+        @apply scale-105;
+    }
+
+    /* Glow Animation */
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2);
+        }
+
+        50% {
+            box-shadow: 0 0 50px rgba(34, 197, 94, 0.6), 0 0 100px rgba(34, 197, 94, 0.3);
+        }
+    }
+
+    .agent-card.enabled {
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        @apply relative inline-block w-14 h-7 bg-gray-700 rounded-full cursor-pointer transition-all duration-300;
+    }
+
+    .toggle-switch.active {
+        @apply bg-green-500;
+    }
+
+    .toggle-slider {
+        @apply absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform duration-300;
+    }
+
+    .toggle-switch.active .toggle-slider {
+        @apply transform translate-x-7;
+    }
+
+    /* Connection Line */
+    .connection-line {
+        @apply absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-green-500 to-transparent;
+    }
+
+    .agent-card.disabled .connection-line {
+        @apply from-gray-700;
+    }
+}
+
+@layer utilities {
+    .text-gradient {
+        @apply bg-gradient-to-r from-blue-400 via-purple-400 to-blue-500 bg-clip-text text-transparent;
+    }
+
+    .glass {
+        @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    }
 }

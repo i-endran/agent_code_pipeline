@@ -20,16 +20,26 @@ export default {
                     900: '#1e3a8a',
                 },
                 dark: {
-                    900: '#0f172a',
-                    800: '#1e293b',
-                    700: '#334155',
-                    600: '#475569',
-                    500: '#64748b',
+                    900: '#000000',
+                    800: '#0a0a0a',
+                    700: '#1a1a1a',
+                    600: '#2a2a2a',
+                    500: '#3a3a3a',
                 }
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
+                sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
             },
+            animation: {
+                'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'glow': 'glow 2s ease-in-out infinite',
+            },
+            keyframes: {
+                glow: {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                }
+            }
         },
     },
     plugins: [],
