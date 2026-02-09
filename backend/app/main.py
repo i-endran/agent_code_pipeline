@@ -18,7 +18,8 @@ from app.api import (
     websocket, 
     artifacts, 
     audit,
-    connectors
+    connectors,
+    mcp
 )
 from app.db.database import engine, Base
 from app.services.logging_service import setup_logging
@@ -92,6 +93,7 @@ app.include_router(agents.router, prefix="/api/agents", tags=["Agents"])
 app.include_router(artifacts.router, prefix="/api/artifacts", tags=["Artifacts"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
+app.include_router(mcp.router, prefix="/api/mcp", tags=["MCP"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 

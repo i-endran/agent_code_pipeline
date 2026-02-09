@@ -56,18 +56,79 @@ Always respond in valid JSON format where appropriate, or clear structured markd
         return prompt
 
     async def call_llm(self, user_prompt: str, context: Optional[Dict] = None) -> str:
-        """Wrapper for calling Gemini with retry logic and error handling."""
+        """Wrapper for calling Gemini with tool support and retry logic."""
         self.logger.info(f"Calling LLM ({self.model_name}) for task {self.task_id}")
         
+        # 1. Fetch Tools for this agent
+        tools_list = []
+        try:
+            from app.db.database import SessionLocal
+            from app.models.models import Tool
+            db = SessionLocal()
+            try:
+                # Get tools assigned to this agent in config
+                agent_tools = self.config.get("tools", [])
+                db_tools = db.query(Tool).filter(Tool.name.in_(agent_tools)).all()
+                
+                # Convert to Gemini tool format (simplified)
+                # In a real app, you'd handle complex nested parameters
+                for t in db_tools:
+                    tools_list.append({
+                        "name": t.name,
+                        "description": t.description or "",
+                        "parameters": t.parameters or {"type": "object", "properties": {}}
+                    })
+            finally:
+                db.close()
+        except Exception as e:
+            self.logger.warning(f"Could not load tools: {e}")
+
         full_context = f"CONTEXT:\n{json.dumps(context, indent=2)}\n\n" if context else ""
         system_prompt = self._get_system_prompt()
         
         try:
-            # Use a chat session for system instruction simulation
-            chat = self.model.start_chat(history=[])
+            # Re-initialize model with tools if any
+            if tools_list:
+                # In Gemini Pro/Flash, tools are passed to the model
+                # Note: This is an simplified implementation of tool loop
+                model_with_tools = genai.GenerativeModel(
+                    model_name=self.model_name,
+                    tools=[{"function_declarations": tools_list}],
+                    generation_config=self.model._generation_config
+                )
+                chat = model_with_tools.start_chat(history=[])
+            else:
+                chat = self.model.start_chat(history=[])
+                
             response = await chat.send_message_async(
                 f"{system_prompt}\n\n{full_context}\nUSER REQUEST: {user_prompt}"
             )
+            
+            # Simple Tool Loop (1 level deep for now)
+            while response.candidates[0].content.parts[0].function_call:
+                fc = response.candidates[0].content.parts[0].function_call
+                tool_name = fc.name
+                args = {k: v for k, v in fc.args.items()}
+                
+                self.logger.info(f"Agent {self.config.get('name')} calling tool: {tool_name}")
+                
+                # Execute Tool via MCPService
+                from app.services.mcp_service import mcp_service
+                db = SessionLocal()
+                try:
+                    result = await mcp_service.execute_tool(tool_name, args, db)
+                    response = await chat.send_message_async(
+                        genai.protos.Content(
+                            parts=[genai.protos.Part(
+                                function_response=genai.protos.FunctionResponse(
+                                    name=tool_name,
+                                    response={'result': result}
+                                )
+                            )]
+                        )
+                    )
+                finally:
+                    db.close()
             
             return response.text
         except Exception as e:
