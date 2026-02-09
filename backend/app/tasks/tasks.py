@@ -98,6 +98,15 @@ async def execute_pipeline(task_id: str):
             if sentinel_results.get("action") == "reworking":
                 send_task_update(task_id, {"message": "Fixes required. Routing back to FORGE (simulation)..."})
 
+        # 6. PHOENIX Stage
+        if context.get("phoenix", {}).get("enabled"):
+            from app.agents.phoenix_agent import PhoenixAgent
+            send_task_update(task_id, {"current_stage": "phoenix", "progress": 96, "message": "Executing PHOENIX (Release)..."})
+            phoenix = PhoenixAgent(context["phoenix"], task_id)
+            phoenix_results = await phoenix.run(context)
+            context["phoenix_results"] = phoenix_results
+            send_task_update(task_id, {"current_stage": "phoenix", "status": "completed", "progress": 100, "message": "PHOENIX completed"})
+
         # Finalize
         task.status = TaskStatus.COMPLETED
         task.completed_at = datetime.utcnow()
