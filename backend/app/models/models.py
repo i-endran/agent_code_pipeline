@@ -180,3 +180,32 @@ class Connector(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MCPServer(Base):
+    """Model for Model Context Protocol (MCP) servers."""
+    __tablename__ = "mcp_servers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, unique=True)
+    url = Column(String(500), nullable=False)
+    auth_token = Column(String(500), nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    tools = relationship("Tool", back_populates="mcp_server")
+
+
+class Tool(Base):
+    """Model for individual tools available to agents."""
+    __tablename__ = "tools"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    mcp_server_id = Column(Integer, ForeignKey("mcp_servers.id"), nullable=True)
+    
+    # Tool parameters schema (JSON)
+    parameters = Column(JSON, nullable=True)
+    
+    mcp_server = relationship("MCPServer", back_populates="tools")

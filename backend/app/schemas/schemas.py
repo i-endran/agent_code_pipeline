@@ -210,3 +210,34 @@ class ConnectorResponse(ConnectorBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ MCP & Tool Schemas ============
+
+class ToolBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+
+class ToolResponse(ToolBase):
+    id: int
+    mcp_server_id: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+class MCPServerBase(BaseModel):
+    name: str
+    url: str
+    is_active: bool = True
+
+class MCPServerCreate(MCPServerBase):
+    auth_token: Optional[str] = None
+
+class MCPServerResponse(MCPServerBase):
+    id: int
+    created_at: datetime
+    tools: List[ToolResponse] = []
+
+    class Config:
+        from_attributes = True
