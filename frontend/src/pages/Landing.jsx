@@ -13,35 +13,30 @@ const agents = [
         name: 'SCRIBE',
         description: 'Document Generator',
         icon: DocumentTextIcon,
-        color: 'from-blue-500 to-cyan-500',
     },
     {
         id: 'architect',
         name: 'ARCHITECT',
         description: 'Plan Generator',
         icon: CubeIcon,
-        color: 'from-purple-500 to-pink-500',
     },
     {
         id: 'forge',
         name: 'FORGE',
         description: 'Code Executor',
         icon: CodeBracketIcon,
-        color: 'from-orange-500 to-red-500',
     },
     {
         id: 'sentinel',
         name: 'SENTINEL',
         description: 'Code Reviewer',
         icon: ShieldCheckIcon,
-        color: 'from-green-500 to-emerald-500',
     },
     {
         id: 'phoenix',
         name: 'PHOENIX',
         description: 'Releaser',
         icon: RocketLaunchIcon,
-        color: 'from-yellow-500 to-orange-500',
     },
 ];
 
@@ -63,56 +58,58 @@ export default function Landing() {
     return (
         <div className="min-h-screen">
             {/* Hero Section */}
-            <header className="mb-16 text-center">
-                <h1 className="text-7xl font-bold mb-4 text-gradient leading-tight">
+            <header className="mb-12 text-center">
+                <h1 className="text-5xl font-bold mb-3 text-gradient-original">
                     AI Agent Pipeline
                 </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                    Configure and deploy 5 specialized agents to automate your SDLC workflow
+                <p className="text-base text-gray-400">
+                    Configure and deploy 6 specialized agents to automate your SDLC
                 </p>
             </header>
 
             {/* Agent Pipeline */}
-            <div className="mb-12">
-                <div className="flex items-center justify-center gap-6 mb-8">
+            <div className="mb-10">
+                <div className="flex items-center justify-center gap-4">
                     {agents.map((agent, index) => {
                         const isEnabled = enabledAgents.has(agent.id);
                         const Icon = agent.icon;
 
                         return (
-                            <div key={agent.id} className="relative">
+                            <div key={agent.id} className="relative flex items-center">
                                 {/* Agent Card */}
                                 <div
-                                    className={`agent-card ${isEnabled ? 'enabled' : 'disabled'} w-48 h-64`}
+                                    className={`agent-card-original ${isEnabled ? 'enabled' : ''} w-40`}
                                     onClick={() => toggleAgent(agent.id)}
                                 >
                                     {/* Icon with Gradient */}
-                                    <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${agent.color} p-4 flex items-center justify-center`}>
-                                        <Icon className="w-full h-full text-white" />
+                                    <div className="mb-3">
+                                        <Icon className="w-10 h-10 mx-auto text-gradient-icon" />
                                     </div>
 
                                     {/* Agent Name */}
-                                    <h3 className="text-xl font-bold text-center mb-2">{agent.name}</h3>
-                                    <p className="text-sm text-gray-400 text-center mb-4">{agent.description}</p>
+                                    <h3 className="text-base font-bold text-center mb-1 text-white">{agent.name}</h3>
+                                    <p className="text-xs text-gray-500 text-center mb-3">{agent.description}</p>
 
                                     {/* Toggle Switch */}
-                                    <div className="flex justify-center">
-                                        <div className={`toggle-switch ${isEnabled ? 'active' : ''}`}>
-                                            <div className="toggle-slider"></div>
+                                    <div className="flex justify-center mb-3">
+                                        <div className={`toggle-switch-original ${isEnabled ? 'active' : ''}`}>
+                                            <div className="toggle-slider-original"></div>
                                         </div>
                                     </div>
 
                                     {/* Configure Button */}
                                     {isEnabled && (
-                                        <button className="mt-4 w-full text-blue-400 text-sm font-medium hover:text-blue-300 transition-colors">
+                                        <button className="w-full text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
                                             ⚙ Configure
                                         </button>
                                     )}
                                 </div>
 
-                                {/* Connection Line */}
+                                {/* Connection Arrow */}
                                 {index < agents.length - 1 && (
-                                    <div className="connection-line"></div>
+                                    <div className="text-purple-500 text-xl px-2 opacity-50">
+                                        →
+                                    </div>
                                 )}
                             </div>
                         );
@@ -120,22 +117,22 @@ export default function Landing() {
                 </div>
 
                 {/* Info Text */}
-                <div className="text-center text-sm text-gray-500">
+                <div className="text-center text-xs text-gray-500 mt-6">
                     <p>↻ SENTINEL → FORGE feedback loop for code fixes</p>
                 </div>
             </div>
 
             {/* Submit Section */}
-            <div className="glass rounded-3xl p-8 max-w-2xl mx-auto">
+            <div className="glass-original rounded-xl p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-2xl font-semibold mb-1">Ready to Deploy</h2>
+                        <h2 className="text-xl font-semibold mb-1">Ready to Deploy</h2>
                         <p className="text-gray-400 text-sm">
                             {enabledAgents.size} agent{enabledAgents.size !== 1 ? 's' : ''} selected
                         </p>
                     </div>
                     <button
-                        className="btn-primary"
+                        className="btn-primary-original"
                         disabled={enabledAgents.size === 0}
                     >
                         🚀 Run Pipeline
