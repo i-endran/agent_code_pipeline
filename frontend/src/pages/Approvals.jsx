@@ -32,6 +32,7 @@ export default function Approvals() {
             setLoading(false);
         } catch (error) {
             console.error('Failed to fetch approvals:', error);
+            // Don't clutter state with errors, just stop loading
             setLoading(false);
         }
     };

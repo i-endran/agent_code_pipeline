@@ -1,4 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     HomeIcon,
     LinkIcon,
@@ -8,6 +10,8 @@ import {
     ChevronRightIcon,
     CheckCircleIcon
 } from '@heroicons/react/24/outline';
+
+const API_BASE = 'http://localhost:8000/api';
 
 const navItems = [
     { name: 'Pipeline', path: '/', icon: HomeIcon },
@@ -19,6 +23,22 @@ const navItems = [
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }) {
     const location = useLocation();
+    const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+    useEffect(() => {
+        checkBackend();
+        const interval = setInterval(checkBackend, 30000); // Check every 30s
+        return () => clearInterval(interval);
+    }, []);
+
+    const checkBackend = async () => {
+        try {
+            await axios.get(`${API_BASE}/agents/status`); // Simple health check
+            setIsBackendConnected(true);
+        } catch (error) {
+            setIsBackendConnected(false);
+        }
+    };
 
     return (
         <aside
@@ -71,11 +91,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
             {/* Footer */}
             <div className={`p-4 border-t border-[#2d3748] transition-all duration-300 ${isCollapsed ? 'flex justify-center' : ''}`}>
                 <div className="text-xs text-gray-500">
-                    <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        {!isCollapsed && <span className="whitespace-nowrap">Backend Connected</span>}
+                    <div className="flex items-center gap-2 mb-1" title={isBackendConnected ? "Connected" : "Disconnected"}>
+                        <div className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                        {!isCollapsed && <span className="whitespace-nowrap">{isBackendConnected ? 'Backend Connected' : 'Offline'}</span>}
                     </div>
-                    {!isCollapsed && <div className="text-gray-600 whitespace-nowrap">Phase 3 - React + Tailwind</div>}
+                    {!isCollapsed && <div className="text-gray-600 whitespace-nowrap">v1.0.0 Beta</div>}
                 </div>
             </div>
         </aside>

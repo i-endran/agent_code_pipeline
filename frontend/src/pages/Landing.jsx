@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
     DocumentTextIcon,
     CubeIcon,
@@ -7,9 +9,11 @@ import {
     RocketLaunchIcon,
     ChartBarIcon,
     ClockIcon,
-    CpuChipIcon,
-    ArrowsRightLeftIcon
+    ArrowsRightLeftIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
+
+const API_BASE = 'http://localhost:8000/api';
 
 const agents = [
     {
@@ -49,33 +53,48 @@ const agents = [
     },
 ];
 
-// Per-Agent Activity Data (Mock)
-const agentActivity = {
-    scribe: {
-        status: 'running',
-        current: { name: 'PRD: Customer Dashboard', progress: 65, time: '1m 20s' },
-        next: { name: 'API Spec: Auth Service' }
-    },
-    architect: {
-        status: 'idle',
-        current: null,
-        next: { name: 'System Design: Data Pipeline' }
-    },
-    forge: {
-        status: 'running',
-        current: { name: 'Implementing Auth Context', progress: 30, time: '4m 10s' },
-        next: { name: 'Unit Tests: Login Flow' }
-    },
-    sentinel: {
-        status: 'running',
-        current: { name: 'Reviewing PR #102', progress: 90, time: '12m 45s' },
-        next: null
-    }
-};
-
 export default function Landing() {
-    const [enabledAgents, setEnabledAgents] = useState(new Set());
-    const [showModal, setShowModal] = useState(null);
+    const navigate = useNavigate();
+    const [enabledAgents, setEnabledAgents] = useState(new Set(['scribe', 'architect', 'forge', 'sentinel', 'phoenix']));
+    const [agentActivity, setAgentActivity] = useState({});
+
+    // Deployment Form
+    const [repoUrl, setRepoUrl] = useState('');
+    const [branch, setBranch] = useState('main');
+    const [taskDescription, setTaskDescription] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Modal State
+    const [showModal, setShowModal] = useState(null); // agentId
+    const [editConfig, setEditConfig] = useState({});
+    const [availableConnectors, setAvailableConnectors] = useState([]);
+    const [assignedConnectors, setAssignedConnectors] = useState([]);
+
+    // Initial load and polling
+    useEffect(() => {
+        fetchActivity();
+        fetchConnectors();
+        const interval = setInterval(fetchActivity, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const fetchActivity = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/agents/activity`);
+            setAgentActivity(res.data);
+        } catch (error) {
+            console.error("Failed to fetch activity:", error);
+        }
+    };
+
+    const fetchConnectors = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/connectors`);
+            setAvailableConnectors(res.data);
+        } catch (error) {
+            console.error("Failed to fetch connectors:", error);
+        }
+    };
 
     // Sequential agent selection logic
     const canToggleAgent = (agentId) => {
@@ -101,6 +120,98 @@ export default function Landing() {
             else newSet.add(agentId);
             return newSet;
         });
+    };
+
+    const handleOpenModal = async (agentId) => {
+        setShowModal(agentId);
+        // Fetch current config
+        try {
+            const res = await axios.get(`${API_BASE}/agents/${agentId}`);
+            setEditConfig({
+                model: res.data.model,
+                temperature: res.data.temperature,
+                max_tokens: res.data.max_tokens,
+                system_prompt: res.data.system_prompt || ""
+            });
+
+            // Fetch prompt specifically if not in main response (depends on backend)
+            // But let's assume /agents/{id} returns merged config
+            const promptRes = await axios.get(`${API_BASE}/agents/${agentId}/prompt`);
+            setEditConfig(prev => ({ ...prev, system_prompt: promptRes.data.system_prompt }));
+
+            // Fetch assignments
+            const connRes = await axios.get(`${API_BASE}/agents/${agentId}/connectors`);
+            setAssignedConnectors(connRes.data);
+
+        } catch (error) {
+            console.error("Failed to fetch agent details:", error);
+            // Fallback defaults if new agent
+            setEditConfig({ model: 'gpt-4o', temperature: 0.7, max_tokens: 2000, system_prompt: '' });
+        }
+    };
+
+    const handleSaveConfig = async () => {
+        try {
+            await axios.patch(`${API_BASE}/agents/${showModal}`, editConfig);
+            alert("Configuration saved!");
+            setShowModal(null);
+        } catch (error) {
+            console.error("Failed to save config:", error);
+            alert("Failed to save configuration");
+        }
+    };
+
+    const handleToggleConnector = async (connectorId, isAssigned) => {
+        try {
+            if (isAssigned) {
+                await axios.delete(`${API_BASE}/agents/${showModal}/connectors/${connectorId}`);
+            } else {
+                await axios.post(`${API_BASE}/agents/${showModal}/connectors`, { connector_id: connectorId });
+            }
+            // Refresh assignments
+            const res = await axios.get(`${API_BASE}/agents/${showModal}/connectors`);
+            setAssignedConnectors(res.data);
+        } catch (error) {
+            console.error("Failed to toggle connector:", error);
+        }
+    };
+
+
+    const handleRunPipeline = async () => {
+        if (!repoUrl) {
+            alert('Repository URL is required');
+            return;
+        }
+        if (!taskDescription) {
+            alert('Task description is required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                repo_url: repoUrl,
+                branch: branch,
+                requirements: taskDescription,
+                agents: {
+                    scribe: { enabled: enabledAgents.has('scribe') },
+                    architect: { enabled: enabledAgents.has('architect') },
+                    forge: { enabled: enabledAgents.has('forge') },
+                    sentinel: { enabled: enabledAgents.has('sentinel') },
+                    phoenix: { enabled: enabledAgents.has('phoenix') }
+                }
+            };
+
+            const res = await axios.post(`${API_BASE}/v1/pipelines`, payload);
+            alert(`Pipeline started! Task ID: ${res.data.task_id}`);
+            // Optional: navigate to specific task view if it existed
+            setTaskDescription(''); // Reset form
+        } catch (error) {
+            console.error("Failed to start pipeline:", error);
+            alert("Failed to start pipeline. Check console for details.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const tokenEstimate = useMemo(() => {
@@ -132,7 +243,7 @@ export default function Landing() {
                 </defs>
             </svg>
 
-            <div className="w-full max-w-6xl flex flex-col items-center">
+            <div className="w-full max-w-6xl flex flex-col items-center px-4">
                 {/* Hero Section */}
                 <header className="mb-12 text-center">
                     <h1 className="text-4xl font-bold mb-3 text-gradient">AI Agent Pipeline</h1>
@@ -164,7 +275,7 @@ export default function Landing() {
                                         </div>
                                         <button
                                             className="btn-config"
-                                            onClick={(e) => { e.stopPropagation(); setShowModal(agent.id); }}
+                                            onClick={(e) => { e.stopPropagation(); handleOpenModal(agent.id); }}
                                             disabled={!isEnabled}
                                         >
                                             ⚙ Configure
@@ -184,22 +295,60 @@ export default function Landing() {
                 {/* Deployment & Estimation Section (Side by Side) */}
                 <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
                     {/* Left: Ready to Deploy */}
-                    <div className="card h-full">
+                    <div className="card h-full flex flex-col">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-lg font-semibold mb-1 text-white">Ready to Deploy</h2>
+                                <h2 className="text-lg font-semibold mb-1 text-white">Create New Task</h2>
                                 <p className="text-gray-400 text-sm">{enabledAgents.size} agent{enabledAgents.size !== 1 ? 's' : ''} selected</p>
                             </div>
-                            <button className="btn-primary" disabled={enabledAgents.size === 0}>🚀 Run Pipeline</button>
                         </div>
-                        <div className="mb-4">
-                            <label className="label">Repository URL</label>
-                            <input type="text" placeholder="https://github.com/username/repo" className="input" />
+
+                        <div className="space-y-4 flex-1">
+                            <div>
+                                <label className="label">Task Description / Requirements</label>
+                                <textarea
+                                    className="w-full bg-black border border-[#2d3748] rounded p-2 text-white text-sm h-24 resize-none focus:border-[#667eea] outline-none"
+                                    placeholder="Describe the feature or bug fix..."
+                                    value={taskDescription}
+                                    onChange={e => setTaskDescription(e.target.value)}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label">Repository URL</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://github.com/username/repo"
+                                        className="input"
+                                        value={repoUrl}
+                                        onChange={e => setRepoUrl(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label">Target Branch</label>
+                                    <input
+                                        type="text"
+                                        placeholder="main"
+                                        className="input"
+                                        value={branch}
+                                        onChange={e => setBranch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label className="label">Target Branch</label>
-                            <input type="text" placeholder="main" className="input" />
-                        </div>
+
+                        <button
+                            className="btn-primary w-full mt-6 flex justify-center items-center gap-2"
+                            disabled={enabledAgents.size === 0 || isSubmitting}
+                            onClick={handleRunPipeline}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Submitting...
+                                </>
+                            ) : '🚀 Run Pipeline'}
+                        </button>
                     </div>
 
                     {/* Right: Token Estimation */}
@@ -239,7 +388,7 @@ export default function Landing() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         {['scribe', 'architect', 'forge', 'sentinel'].map(agentId => {
-                            const activity = agentActivity[agentId];
+                            const activity = agentActivity[agentId] || { status: 'idle', current: null, next: null };
                             const agentName = agentId.toUpperCase();
                             const isIdle = activity.status === 'idle';
 
@@ -258,7 +407,7 @@ export default function Landing() {
                                             <h3 className="task-name line-clamp-1">{activity.current.name}</h3>
                                             <div className="task-meta mt-4">
                                                 <span className="flex items-center gap-1">
-                                                    <ClockIcon className="w-3 h-3" /> {activity.current.time}
+                                                    <ClockIcon className="w-3 h-3" /> {activity.current.time || '0s'}
                                                 </span>
                                                 <span>{activity.current.progress}%</span>
                                             </div>
@@ -290,16 +439,75 @@ export default function Landing() {
                 </div>
             </div>
 
-            {/* Agent Modal */}
+            {/* Config Modal */}
             {showModal && (
-                <div
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
-                    onClick={() => setShowModal(null)}
-                >
-                    <div className="card max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold mb-4 text-gradient">Configure {showModal.toUpperCase()}</h3>
-                        <p className="text-gray-400 mb-6">Configuration options for this agent...</p>
-                        <button className="btn-primary w-full" onClick={() => setShowModal(null)}>Close</button>
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1a1b23] w-full max-w-2xl rounded-xl border border-[#2d3748] flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-[#2d3748] flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-white capitalize">Configure {showModal}</h3>
+                            <button onClick={() => setShowModal(null)} className="text-gray-400 hover:text-white">
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                            {/* Connector Assignment */}
+                            <div>
+                                <h4 className="text-sm font-bold text-white mb-3">Assigned Connectors</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {availableConnectors.map(conn => {
+                                        const isAssigned = assignedConnectors.some(ac => ac.id === conn.id);
+                                        return (
+                                            <button
+                                                key={conn.id}
+                                                onClick={() => handleToggleConnector(conn.id, isAssigned)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${isAssigned
+                                                        ? 'bg-[#667eea]/20 border-[#667eea] text-[#667eea]'
+                                                        : 'bg-black border-[#2d3748] text-gray-400 hover:border-gray-500'
+                                                    }`}
+                                            >
+                                                {conn.name} ({conn.type})
+                                                {isAssigned && " ✓"}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Model ID</label>
+                                    <input
+                                        className="w-full bg-black border border-[#2d3748] rounded p-2 text-white text-sm"
+                                        value={editConfig.model || ''}
+                                        onChange={e => setEditConfig({ ...editConfig, model: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1">Temperature</label>
+                                    <input
+                                        type="number" step="0.1"
+                                        className="w-full bg-black border border-[#2d3748] rounded p-2 text-white text-sm"
+                                        value={editConfig.temperature || 0}
+                                        onChange={e => setEditConfig({ ...editConfig, temperature: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">System Prompt</label>
+                                <textarea
+                                    className="w-full bg-black border border-[#2d3748] rounded p-2 text-white text-sm font-mono h-40"
+                                    value={editConfig.system_prompt || ''}
+                                    onChange={e => setEditConfig({ ...editConfig, system_prompt: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-[#2d3748] flex justify-end gap-3">
+                            <button onClick={() => setShowModal(null)} className="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                            <button onClick={handleSaveConfig} className="px-4 py-2 bg-[#667eea] text-white rounded">Save Configuration</button>
+                        </div>
                     </div>
                 </div>
             )}

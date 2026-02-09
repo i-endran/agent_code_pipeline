@@ -119,3 +119,47 @@ def calculate_token_estimate(enabled_agents: List[str]) -> Dict[str, Any]:
 def reload_configs():
     """Clear config cache and reload from file."""
     load_agent_configs.cache_clear()
+
+
+def update_agent_config(agent_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Update configuration for a specific agent and persist to file.
+    
+    Args:
+        agent_id: Agent ID (scribe, architect, etc.)
+        updates: Dictionary of configuration updates
+        
+    Returns:
+        Updated agent configuration or None if agent not found
+    """
+    config_path = get_config_path()
+    
+    # Load raw config to preserve structure/comments if possible (yaml round-trip)
+    # For now, we'll just use the standard loader/dumper
+    with open(config_path, "r", encoding="utf-8") as f:
+        full_config = yaml.safe_load(f)
+    
+    if "agents" not in full_config or agent_id not in full_config["agents"]:
+        return None
+    
+    # Update the specific agent's config
+    current_config = full_config["agents"][agent_id]
+    
+    # Deep update (recursive)
+    def deep_update(target, source):
+        for key, value in source.items():
+            if isinstance(value, dict) and key in target and isinstance(target[key], dict):
+                deep_update(target[key], value)
+            else:
+                target[key] = value
+                
+    deep_update(current_config, updates)
+    
+    # Save back to file
+    with open(config_path, "w", encoding="utf-8") as f:
+        yaml.dump(full_config, f, sort_keys=False, allow_unicode=True)
+    
+    # Reload cache
+    reload_configs()
+    
+    return get_agent_config(agent_id)

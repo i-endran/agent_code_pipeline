@@ -91,3 +91,21 @@ async def get_agent_prompt(agent_id: str):
         "name": config["name"],
         "system_prompt": config.get("system_prompt", "")
     }
+
+
+@router.patch("/{agent_id}")
+async def update_agent(agent_id: str, body: dict):
+    """
+    Update configuration for a specific agent.
+    """
+    from app.services.agent_config import update_agent_config
+    
+    updated_config = update_agent_config(agent_id, body)
+    if not updated_config:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+            
+    return {
+        "id": agent_id,
+        **updated_config
+    }
