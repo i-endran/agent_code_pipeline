@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     DocumentTextIcon,
     CubeIcon,
     CodeBracketIcon,
     ChatBubbleLeftRightIcon,
     ShieldCheckIcon,
-    RocketLaunchIcon
+    RocketLaunchIcon,
+    ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const agents = [
@@ -14,44 +15,79 @@ const agents = [
         name: 'SCRIBE',
         role: 'Requirement Parser',
         icon: DocumentTextIcon,
+        tokens: { input: 2000, output: 1500 },
     },
     {
         id: 'architect',
         name: 'ARCHITECT',
         role: 'Plan Generator',
         icon: CubeIcon,
+        tokens: { input: 3000, output: 2500 },
     },
     {
         id: 'forge',
         name: 'FORGE',
         role: 'Code Executor',
         icon: CodeBracketIcon,
+        tokens: { input: 5000, output: 4000 },
     },
     {
         id: 'herald',
         name: 'HERALD',
         role: 'MR Creator',
         icon: ChatBubbleLeftRightIcon,
+        tokens: { input: 1500, output: 1000 },
     },
     {
         id: 'sentinel',
         name: 'SENTINEL',
         role: 'Code Reviewer',
         icon: ShieldCheckIcon,
+        tokens: { input: 4000, output: 3000 },
     },
     {
         id: 'phoenix',
         name: 'PHOENIX',
         role: 'Releaser',
         icon: RocketLaunchIcon,
+        tokens: { input: 1000, output: 500 },
     },
 ];
 
 export default function Landing() {
     const [enabledAgents, setEnabledAgents] = useState(new Set(['scribe', 'architect', 'forge', 'herald']));
     const [showModal, setShowModal] = useState(null);
+    const [showTokenDashboard, setShowTokenDashboard] = useState(false);
+
+    // Sequential agent selection logic
+    const canToggleAgent = (agentId) => {
+        const agentIndex = agents.findIndex(a => a.id === agentId);
+        const isEnabled = enabledAgents.has(agentId);
+
+        if (isEnabled) {
+            // Can only disable if no agents after this are enabled
+            for (let i = agentIndex + 1; i < agents.length; i++) {
+                if (enabledAgents.has(agents[i].id)) {
+                    return false; // Can't disable because a later agent is enabled
+                }
+            }
+            return true;
+        } else {
+            // Can only enable if all previous agents are enabled
+            for (let i = 0; i < agentIndex; i++) {
+                if (!enabledAgents.has(agents[i].id)) {
+                    return false; // Can't enable because a previous agent is disabled
+                }
+            }
+            return true;
+        }
+    };
 
     const toggleAgent = (agentId) => {
+        if (!canToggleAgent(agentId)) {
+            return; // Don't allow toggle if sequential order would be broken
+        }
+
         setEnabledAgents(prev => {
             const newSet = new Set(prev);
             if (newSet.has(agentId)) {
@@ -68,8 +104,28 @@ export default function Landing() {
         setShowModal(agentId);
     };
 
+    // Calculate token estimates
+    const tokenEstimate = useMemo(() => {
+        let totalInput = 0;
+        let totalOutput = 0;
+
+        agents.forEach(agent => {
+            if (enabledAgents.has(agent.id)) {
+                totalInput += agent.tokens.input;
+                totalOutput += agent.tokens.output;
+            }
+        });
+
+        return {
+            input: totalInput,
+            output: totalOutput,
+            total: totalInput + totalOutput,
+            cost: ((totalInput * 0.00001) + (totalOutput * 0.00003)).toFixed(4)
+        };
+    }, [enabledAgents]);
+
     return (
-        <div className="py-8">
+        <div className="pt-6 pb-8">
             {/* SVG Gradient Definition for Icons */}
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>
@@ -80,9 +136,9 @@ export default function Landing() {
                 </defs>
             </svg>
 
-            {/* Hero Section */}
-            <header className="mb-10 text-center">
-                <h1 className="text-4xl font-bold mb-2 text-gradient">
+            {/* Hero Section - Fixed line-height for text clipping */}
+            <header className="mb-12 text-center">
+                <h1 className="text-4xl font-bold mb-3 text-gradient leading-relaxed">
                     AI Agent Pipeline
                 </h1>
                 <p className="text-gray-400 text-sm">
@@ -90,19 +146,21 @@ export default function Landing() {
                 </p>
             </header>
 
-            {/* Agent Pipeline */}
-            <div className="mb-10 overflow-x-auto pb-4">
+            {/* Agent Pipeline - Added more top padding for hover */}
+            <div className="mb-10 overflow-visible pt-4">
                 <div className="flex items-start justify-center gap-2 min-w-max px-4">
                     {agents.map((agent, index) => {
                         const isEnabled = enabledAgents.has(agent.id);
+                        const canToggle = canToggleAgent(agent.id);
                         const Icon = agent.icon;
 
                         return (
                             <div key={agent.id} className="flex items-center">
                                 {/* Agent Card */}
                                 <div
-                                    className={`agent-box cursor-pointer ${isEnabled ? 'enabled' : ''}`}
+                                    className={`agent-box ${isEnabled ? 'enabled' : ''} ${!canToggle ? 'locked' : ''}`}
                                     onClick={() => toggleAgent(agent.id)}
+                                    title={!canToggle ? 'Enable previous agents first' : ''}
                                 >
                                     {/* Icon */}
                                     <div className="agent-icon">
@@ -118,7 +176,7 @@ export default function Landing() {
 
                                     {/* Toggle Switch */}
                                     <div className="agent-toggle">
-                                        <div className={`toggle-switch ${isEnabled ? 'active' : ''}`}>
+                                        <div className={`toggle-switch ${isEnabled ? 'active' : ''} ${!canToggle ? 'disabled' : ''}`}>
                                             <div className="toggle-slider"></div>
                                         </div>
                                     </div>
@@ -143,9 +201,20 @@ export default function Landing() {
                 </div>
 
                 {/* Info Text */}
-                <div className="text-center text-xs text-gray-500 mt-4">
+                <div className="text-center text-xs text-gray-500 mt-6">
                     <p>↻ SENTINEL → FORGE feedback loop for code fixes</p>
                 </div>
+            </div>
+
+            {/* Token Dashboard Button */}
+            <div className="flex justify-center mb-6">
+                <button
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-600 hover:border-[#667eea] rounded-lg transition-all"
+                    onClick={() => setShowTokenDashboard(true)}
+                >
+                    <ChartBarIcon className="w-5 h-5" />
+                    Token Dashboard
+                </button>
             </div>
 
             {/* Submit Section */}
@@ -186,7 +255,7 @@ export default function Landing() {
                 </div>
             </div>
 
-            {/* Modal Placeholder */}
+            {/* Agent Configuration Modal */}
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -206,6 +275,75 @@ export default function Landing() {
                         >
                             Close
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Token Dashboard Modal */}
+            {showTokenDashboard && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                    onClick={() => setShowTokenDashboard(false)}
+                >
+                    <div
+                        className="card max-w-lg w-full mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-gradient">
+                                Token Estimation
+                            </h3>
+                            <button
+                                className="text-gray-400 hover:text-white text-xl"
+                                onClick={() => setShowTokenDashboard(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Token Breakdown */}
+                        <div className="space-y-3 mb-6">
+                            {agents.map(agent => {
+                                const isEnabled = enabledAgents.has(agent.id);
+                                return (
+                                    <div
+                                        key={agent.id}
+                                        className={`flex justify-between items-center py-2 border-b border-gray-700 ${!isEnabled ? 'opacity-40' : ''}`}
+                                    >
+                                        <span className="text-sm font-medium">{agent.name}</span>
+                                        <div className="text-sm text-gray-400">
+                                            <span className="text-blue-400">{isEnabled ? agent.tokens.input.toLocaleString() : 0}</span>
+                                            {' / '}
+                                            <span className="text-green-400">{isEnabled ? agent.tokens.output.toLocaleString() : 0}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Totals */}
+                        <div className="bg-gray-800/50 rounded-lg p-4 space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Input Tokens</span>
+                                <span className="text-blue-400 font-medium">{tokenEstimate.input.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Output Tokens</span>
+                                <span className="text-green-400 font-medium">{tokenEstimate.output.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm pt-2 border-t border-gray-600">
+                                <span className="text-gray-400">Total Tokens</span>
+                                <span className="text-white font-bold">{tokenEstimate.total.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Estimated Cost</span>
+                                <span className="text-gradient font-bold">${tokenEstimate.cost}</span>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-4 text-center">
+                            Estimates based on average token usage. Actual usage may vary.
+                        </p>
                     </div>
                 </div>
             )}
