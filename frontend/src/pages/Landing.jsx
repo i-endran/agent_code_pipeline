@@ -118,7 +118,7 @@ export default function Landing() {
     }, [enabledAgents]);
 
     return (
-        <div className="pt-8 pb-8">
+        <div className="pt-8 pb-8 flex flex-col items-center w-full">
             {/* SVG Gradient Definition for Icons */}
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>
@@ -129,89 +129,90 @@ export default function Landing() {
                 </defs>
             </svg>
 
-            {/* Hero Section - Fixed line-height for text clipping */}
-            <header className="mb-12 text-center">
-                <h1 className="text-4xl font-bold mb-3 text-gradient">
-                    AI Agent Pipeline
-                </h1>
-                <p className="text-gray-400 text-sm">
-                    Configure and deploy 5 specialized agents to automate your SDLC
-                </p>
-            </header>
+            <div className="w-full max-w-6xl flex flex-col items-center">
+                {/* Hero Section */}
+                <header className="mb-12 text-center">
+                    <h1 className="text-4xl font-bold mb-3 text-gradient">
+                        AI Agent Pipeline
+                    </h1>
+                    <p className="text-gray-400 text-sm">
+                        Configure and deploy 5 specialized agents to automate your SDLC
+                    </p>
+                </header>
 
-            {/* Agent Pipeline - Added more top padding for hover */}
-            <div className="mb-10 overflow-visible pt-6">
-                <div className="flex items-start justify-center gap-2 min-w-max px-4">
-                    {agents.map((agent, index) => {
-                        const isEnabled = enabledAgents.has(agent.id);
-                        const canToggle = canToggleAgent(agent.id);
-                        const Icon = agent.icon;
+                {/* Agent Pipeline */}
+                <div className="mb-10 w-full overflow-x-auto pb-6 scrollbar-hidden">
+                    <div className="flex items-start justify-center gap-2 min-w-max px-8 pt-6">
+                        {agents.map((agent, index) => {
+                            const isEnabled = enabledAgents.has(agent.id);
+                            const canToggle = canToggleAgent(agent.id);
+                            const Icon = agent.icon;
 
-                        return (
-                            <div key={agent.id} className="flex items-center">
-                                {/* Agent Card */}
-                                <div
-                                    className={`agent-box ${isEnabled ? 'enabled' : ''} ${!canToggle ? 'locked' : ''}`}
-                                    onClick={() => toggleAgent(agent.id)}
-                                    title={!canToggle ? 'Enable previous agents first' : ''}
-                                >
-                                    {/* Icon */}
-                                    <div className="agent-icon">
-                                        <Icon
-                                            className="w-10 h-10"
-                                            style={{ stroke: 'url(#icon-gradient)' }}
-                                        />
-                                    </div>
-
-                                    {/* Agent Name */}
-                                    <div className="agent-name">{agent.name}</div>
-                                    <div className="agent-role">{agent.role}</div>
-
-                                    {/* Toggle Switch */}
-                                    <div className="agent-toggle">
-                                        <div className={`toggle-switch ${isEnabled ? 'active' : ''} ${!canToggle ? 'disabled' : ''}`}>
-                                            <div className="toggle-slider"></div>
-                                        </div>
-                                    </div>
-
-                                    {/* Configure Button */}
-                                    <button
-                                        className="btn-config"
-                                        onClick={(e) => handleConfigure(e, agent.id)}
-                                        disabled={!isEnabled}
+                            return (
+                                <div key={agent.id} className="flex items-center">
+                                    {/* Agent Card */}
+                                    <div
+                                        className={`agent-box ${isEnabled ? 'enabled' : ''} ${!canToggle ? 'locked' : ''}`}
+                                        onClick={() => toggleAgent(agent.id)}
+                                        title={!canToggle ? 'Enable previous agents first' : ''}
                                     >
-                                        ⚙ Configure
-                                    </button>
+                                        {/* Icon */}
+                                        <div className="agent-icon">
+                                            <Icon
+                                                className="w-10 h-10"
+                                                style={{ stroke: 'url(#icon-gradient)' }}
+                                            />
+                                        </div>
+
+                                        {/* Agent Name */}
+                                        <div className="agent-name">{agent.name}</div>
+                                        <div className="agent-role">{agent.role}</div>
+
+                                        {/* Toggle Switch */}
+                                        <div className="agent-toggle">
+                                            <div className={`toggle-switch ${isEnabled ? 'active' : ''} ${!canToggle ? 'disabled' : ''}`}>
+                                                <div className="toggle-slider"></div>
+                                            </div>
+                                        </div>
+
+                                        {/* Configure Button */}
+                                        <button
+                                            className="btn-config"
+                                            onClick={(e) => handleConfigure(e, agent.id)}
+                                            disabled={!isEnabled}
+                                        >
+                                            ⚙ Configure
+                                        </button>
+                                    </div>
+
+                                    {/* Connection Arrow */}
+                                    {index < agents.length - 1 && (
+                                        <div className="pipeline-connector">→</div>
+                                    )}
                                 </div>
-
-                                {/* Connection Arrow */}
-                                {index < agents.length - 1 && (
-                                    <div className="pipeline-connector">→</div>
-                                )}
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* Info Text */}
-                <div className="text-center text-xs text-gray-500 mt-6">
-                    <p>↻ SENTINEL → FORGE feedback loop for code fixes</p>
-                </div>
-            </div>
+                {/* Info Text & Token Dashboard - CENTERED RELATIVE TO AGENTS */}
+                <div className="flex flex-col items-center w-full mb-10">
+                    <div className="text-center text-xs text-gray-500 mb-6">
+                        <p>↻ SENTINEL → FORGE feedback loop for code fixes</p>
+                    </div>
 
-            {/* Token Dashboard Button */}
-            <div className="flex justify-center mb-6">
-                <button
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-600 hover:border-[#667eea] rounded-lg transition-all"
-                    onClick={() => setShowTokenDashboard(true)}
-                >
-                    <ChartBarIcon className="w-5 h-5" />
-                    Token Dashboard
-                </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-600 hover:border-[#667eea] rounded-lg transition-all"
+                        onClick={() => setShowTokenDashboard(true)}
+                    >
+                        <ChartBarIcon className="w-5 h-5" />
+                        Token Dashboard
+                    </button>
+                </div>
             </div>
 
             {/* Submit Section */}
-            <div className="card max-w-2xl mx-auto">
+            <div className="card max-w-2xl mx-auto w-full">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-lg font-semibold mb-1 text-white">Ready to Deploy</h2>
