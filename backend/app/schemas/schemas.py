@@ -24,7 +24,6 @@ class AgentStageEnum(str, Enum):
     SCRIBE = "scribe"
     ARCHITECT = "architect"
     FORGE = "forge"
-    HERALD = "herald"
     SENTINEL = "sentinel"
     PHOENIX = "phoenix"
 
@@ -34,7 +33,7 @@ class AgentStageEnum(str, Enum):
 class AgentInputBase(BaseModel):
     """Base schema for agent inputs."""
     enabled: bool = False
-    model: Optional[str] = None
+    user_prompt: Optional[str] = None
 
 
 class ScribeInput(AgentInputBase):
@@ -42,6 +41,7 @@ class ScribeInput(AgentInputBase):
     requirement_text: str = ""
     project_context: str = ""
     output_format: str = "markdown"  # markdown, docx, both
+    selected_documents: List[str] = ["feature_doc"]
 
 
 class ArchitectInput(AgentInputBase):
@@ -93,7 +93,6 @@ class PipelineAgentConfigs(BaseModel):
     scribe: ScribeInput = ScribeInput()
     architect: ArchitectInput = ArchitectInput()
     forge: ForgeInput = ForgeInput()
-    herald: HeraldInput = HeraldInput()
     sentinel: SentinelInput = SentinelInput()
     phoenix: PhoenixInput = PhoenixInput()
 

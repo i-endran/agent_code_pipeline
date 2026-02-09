@@ -190,10 +190,11 @@ class PipelineManager {
         const config = this.agentConfigs.scribe;
         return {
             enabled: this.enabledAgents.has('scribe'),
-            model: config.model || '',
+            user_prompt: config.user_prompt || '',
             requirement_text: config.requirement_text || '',
             project_context: config.project_context || '',
             output_format: config.output_format || 'markdown',
+            selected_documents: config.selected_documents || ['feature_doc'],
         };
     }
 
@@ -201,7 +202,7 @@ class PipelineManager {
         const config = this.agentConfigs.architect;
         return {
             enabled: this.enabledAgents.has('architect'),
-            model: config.model || '',
+            user_prompt: config.user_prompt || '',
             tech_stack: (config.tech_stack || '').split(',').map(s => s.trim()).filter(Boolean),
             architecture_notes: config.architecture_notes || '',
             granularity: parseInt(config.granularity) || 3,
@@ -212,7 +213,7 @@ class PipelineManager {
         const config = this.agentConfigs.forge;
         return {
             enabled: this.enabledAgents.has('forge'),
-            model: config.model || '',
+            user_prompt: config.user_prompt || '',
             repo_path: config.repo_path || '',
             target_branch: config.target_branch || '',
             test_command: config.test_command || 'npm test',
@@ -220,24 +221,11 @@ class PipelineManager {
         };
     }
 
-    _buildHeraldConfig() {
-        const config = this.agentConfigs.herald;
-        return {
-            enabled: this.enabledAgents.has('herald'),
-            model: config.model || '',
-            git_provider: config.git_provider || 'github',
-            repo_url: config.repo_url || '',
-            mr_title_template: config.mr_title_template || '[AUTO] {feature_name}',
-            reviewer_webhook_url: config.reviewer_webhook_url || '',
-            labels: (config.labels || '').split(',').map(s => s.trim()).filter(Boolean),
-        };
-    }
-
     _buildSentinelConfig() {
         const config = this.agentConfigs.sentinel;
         return {
             enabled: this.enabledAgents.has('sentinel'),
-            model: config.model || '',
+            user_prompt: config.user_prompt || '',
             review_criteria: config.review_criteria || '',
             auto_approve_threshold: parseInt(config.auto_approve_threshold) || 85,
             max_fix_iterations: parseInt(config.max_fix_iterations) || 3,
@@ -249,7 +237,7 @@ class PipelineManager {
         const config = this.agentConfigs.phoenix;
         return {
             enabled: this.enabledAgents.has('phoenix'),
-            model: config.model || '',
+            user_prompt: config.user_prompt || '',
             release_branch: config.release_branch || 'main',
             chat_webhook_url: config.chat_webhook_url || '',
             chat_platform: config.chat_platform || 'slack',

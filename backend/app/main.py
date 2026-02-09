@@ -13,6 +13,10 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.api import pipelines, tasks, agents, websocket
 from app.db.database import engine, Base
+from app.services.logging_service import setup_logging
+
+# Initialize logging
+setup_logging(log_type="api")
 
 
 @asynccontextmanager

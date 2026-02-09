@@ -30,10 +30,20 @@ class Settings(BaseSettings):
     # RabbitMQ
     RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672//"
     
-    # LLM API Keys
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
-    GOOGLE_API_KEY: str = ""
+    # LLM Settings
+    OPENAI_API_KEY: Optional[str] = None
+    GOOGLE_API_KEY: Optional[str] = None
+    ANTHROPIC_API_KEY: Optional[str] = None
+    
+    # Models
+    SCRIBE_MODEL: str = "gemini-2.0-flash"
+    ARCHITECT_MODEL: str = "gemini-2.0-pro-exp-02-05"
+    FORGE_MODEL: str = "gemini-2.0-flash"
+    SENTINEL_MODEL: str = "gemini-2.0-pro-exp-02-05"
+    PHOENIX_MODEL: str = "gemini-2.0-flash"
+    
+    # Storage
+    STORAGE_PATH: str = "./storage"
     
     # Worker Configuration
     MAX_WORKERS: int = 5

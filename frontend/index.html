@@ -299,12 +299,32 @@
 
                     <div class="mb-3">
                         <label class="form-label">LLM Model</label>
-                        <select class="form-select" id="scribe-model">
-                            <option value="gpt-4o">GPT-4o (Standard)</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini</option>
-                            <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                        </select>
+                        <div><span class="badge bg-secondary">Gemini 2.0 Flash</span></div>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">User Prompt / Specific Notes</label>
+                        <textarea class="form-control" id="scribe-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Document Types</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="feature_doc" id="doc-feature" checked>
+                                <label class="form-check-label" for="doc-feature">Feature Doc</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="dpia" id="doc-dpia">
+                                <label class="form-check-label" for="doc-dpia">DPIA</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="data_flow" id="doc-data-flow">
+                                <label class="form-check-label" for="doc-data-flow">Data Flow</label>
+                            </div>
+                        </div>
+                    </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Requirement Text <span class="text-danger">*</span></label>
@@ -353,11 +373,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">LLM Model</label>
-                        <select class="form-select" id="architect-model">
-                            <option value="gpt-4o" selected>GPT-4o (Standard)</option>
-                            <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                        </select>
+                        <div><span class="badge bg-secondary">Gemini 2.0 Pro</span></div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">User Prompt / Specific Notes</label>
+                        <textarea class="form-control" id="architect-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                    </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Tech Stack</label>
@@ -407,11 +430,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">LLM Model</label>
-                        <select class="form-select" id="forge-model">
-                            <option value="claude-3-5-sonnet-20240620" selected>Claude 3.5 Sonnet</option>
-                            <option value="gpt-4o">GPT-4o (Standard)</option>
-                        </select>
+                        <div><span class="badge bg-secondary">Gemini 2.0 Flash (CLI)</span></div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">User Prompt / Specific Notes</label>
+                        <textarea class="form-control" id="forge-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                    </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Repository Path <span class="text-danger">*</span></label>
@@ -524,11 +550,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">LLM Model</label>
-                        <select class="form-select" id="sentinel-model">
-                            <option value="gpt-4o" selected>GPT-4o (Standard)</option>
-                            <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet</option>
-                        </select>
+                        <div><span class="badge bg-secondary">Gemini 2.0 Pro</span></div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">User Prompt / Specific Notes</label>
+                        <textarea class="form-control" id="sentinel-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                    </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Review Criteria</label>
@@ -584,11 +613,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">LLM Model</label>
-                        <select class="form-select" id="phoenix-model">
-                            <option value="gpt-4o-mini" selected>GPT-4o Mini</option>
-                            <option value="gpt-4o">GPT-4o (Standard)</option>
-                        </select>
+                        <div><span class="badge bg-secondary">Gemini 2.0 Pro</span></div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">User Prompt / Specific Notes</label>
+                        <textarea class="form-control" id="phoenix-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                    </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Release Branch <span class="text-danger">*</span></label>

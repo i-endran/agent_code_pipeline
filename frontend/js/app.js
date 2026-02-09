@@ -96,35 +96,33 @@ function openAgentModal(agentId) {
 function fillModalWithConfig(agentId, config) {
     switch (agentId) {
         case 'scribe':
-            setInputValue('scribe-model', config.model);
+            setInputValue('scribe-prompt', config.user_prompt);
             setInputValue('scribe-requirement', config.requirement_text);
             setInputValue('scribe-context', config.project_context);
             setInputValue('scribe-format', config.output_format || 'markdown');
+
+            // Set checkboxes for SCRIBE
+            const selectedDocs = config.selected_documents || ['feature_doc'];
+            document.querySelectorAll('.scribe-doc-type').forEach(cb => {
+                cb.checked = selectedDocs.includes(cb.value);
+            });
             break;
         case 'architect':
-            setInputValue('architect-model', config.model);
+            setInputValue('architect-prompt', config.user_prompt);
             setInputValue('architect-techstack', config.tech_stack);
             setInputValue('architect-notes', config.architecture_notes);
             setInputValue('architect-granularity', config.granularity || 3);
             document.getElementById('architect-granularity-value').textContent = config.granularity || 3;
             break;
         case 'forge':
-            setInputValue('forge-model', config.model);
+            setInputValue('forge-prompt', config.user_prompt);
             setInputValue('forge-repo', config.repo_path);
             setInputValue('forge-branch', config.target_branch);
             setInputValue('forge-test', config.test_command || 'npm test');
             setInputValue('forge-lint', config.lint_command || 'npm run lint');
             break;
-        case 'herald':
-            setInputValue('herald-model', config.model);
-            setInputValue('herald-provider', config.git_provider || 'github');
-            setInputValue('herald-repo', config.repo_url);
-            setInputValue('herald-title', config.mr_title_template || '[AUTO] {feature_name}');
-            setInputValue('herald-webhook', config.reviewer_webhook_url);
-            setInputValue('herald-labels', config.labels);
-            break;
         case 'sentinel':
-            setInputValue('sentinel-model', config.model);
+            setInputValue('sentinel-prompt', config.user_prompt);
             setInputValue('sentinel-criteria', config.review_criteria);
             setInputValue('sentinel-threshold', config.auto_approve_threshold || 85);
             document.getElementById('sentinel-threshold-value').textContent = config.auto_approve_threshold || 85;
@@ -132,7 +130,7 @@ function fillModalWithConfig(agentId, config) {
             setInputValue('sentinel-target', config.target_branch || 'develop');
             break;
         case 'phoenix':
-            setInputValue('phoenix-model', config.model);
+            setInputValue('phoenix-prompt', config.user_prompt);
             setInputValue('phoenix-branch', config.release_branch || 'main');
             setInputValue('phoenix-platform', config.chat_platform || 'slack');
             setInputValue('phoenix-strategy', config.merge_strategy || 'squash');
@@ -157,67 +155,6 @@ function setInputValue(elementId, value) {
 function saveAgentConfig(agentId) {
     let config = {};
 
-    switch (agentId) {
-        case 'scribe':
-            config = {
-                model: document.getElementById('scribe-model').value,
-                requirement_text: document.getElementById('scribe-requirement').value,
-                project_context: document.getElementById('scribe-context').value,
-                output_format: document.getElementById('scribe-format').value,
-            };
-            break;
-        case 'architect':
-            config = {
-                model: document.getElementById('architect-model').value,
-                tech_stack: document.getElementById('architect-techstack').value,
-                architecture_notes: document.getElementById('architect-notes').value,
-                granularity: document.getElementById('architect-granularity').value,
-            };
-            break;
-        case 'forge':
-            config = {
-                model: document.getElementById('forge-model').value,
-                repo_path: document.getElementById('forge-repo').value,
-                target_branch: document.getElementById('forge-branch').value,
-                test_command: document.getElementById('forge-test').value,
-                lint_command: document.getElementById('forge-lint').value,
-            };
-            break;
-        case 'herald':
-            config = {
-                model: document.getElementById('herald-model').value,
-                git_provider: document.getElementById('herald-provider').value,
-                repo_url: document.getElementById('herald-repo').value,
-                mr_title_template: document.getElementById('herald-title').value,
-                reviewer_webhook_url: document.getElementById('herald-webhook').value,
-                labels: document.getElementById('herald-labels').value,
-            };
-            break;
-        case 'sentinel':
-            config = {
-                model: document.getElementById('sentinel-model').value,
-                review_criteria: document.getElementById('sentinel-criteria').value,
-                auto_approve_threshold: document.getElementById('sentinel-threshold').value,
-                max_fix_iterations: document.getElementById('sentinel-iterations').value,
-                target_branch: document.getElementById('sentinel-target').value,
-            };
-            break;
-        case 'phoenix':
-            config = {
-                model: document.getElementById('phoenix-model').value,
-                release_branch: document.getElementById('phoenix-branch').value,
-                chat_platform: document.getElementById('phoenix-platform').value,
-                merge_strategy: document.getElementById('phoenix-strategy').value,
-                chat_webhook_url: document.getElementById('phoenix-webhook').value,
-                changelog_enabled: document.getElementById('phoenix-changelog').checked,
-                notification_template: document.getElementById('phoenix-template').value,
-            };
-            break;
-    }
-
-    pipelineManager.setAgentConfig(agentId, config);
-
-    // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById(`modal-${agentId}`));
     modal.hide();
 
