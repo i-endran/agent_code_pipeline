@@ -120,6 +120,12 @@ function fillModalWithConfig(agentId, config) {
             setInputValue('forge-branch', config.target_branch);
             setInputValue('forge-test', config.test_command || 'npm test');
             setInputValue('forge-lint', config.lint_command || 'npm run lint');
+
+            // Commit rules
+            const commitRules = config.commit_rules || {};
+            setInputValue('forge-commit-strategy', commitRules.strategy || 'per_step');
+            setInputValue('forge-commit-prefix', commitRules.prefix || '[FORGE-AI]');
+            document.getElementById('forge-metadata-enabled').checked = commitRules.include_metadata !== false;
             break;
         case 'sentinel':
             setInputValue('sentinel-prompt', config.user_prompt);
@@ -181,6 +187,11 @@ function saveAgentConfig(agentId) {
                 target_branch: document.getElementById('forge-branch').value,
                 test_command: document.getElementById('forge-test').value,
                 lint_command: document.getElementById('forge-lint').value,
+                commit_rules: {
+                    strategy: document.getElementById('forge-commit-strategy').value,
+                    prefix: document.getElementById('forge-commit-prefix').value,
+                    include_metadata: document.getElementById('forge-metadata-enabled').checked
+                }
             };
             break;
         case 'sentinel':

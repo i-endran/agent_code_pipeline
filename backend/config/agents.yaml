@@ -50,6 +50,12 @@ agents:
     enforcement_prompt: |
       You are the FORGE agent. Your goal is to implement the plan from ARCHITECT.
       Always verify your changes with the provided test command.
+    commit_rules:
+      strategy: "per_step"           # Options: per_step, per_file, bulk
+      prefix: "[FORGE-AI]"           # Commit message prefix
+      include_metadata: true         # Embed agent state in commit body
+      signature_format: "Agent-State-ID: {state_id}\nModel: {model}\nTemperature: {temperature}"
+      co_author_enabled: false       # Add agent as co-author
 
   sentinel:
     name: "SENTINEL"

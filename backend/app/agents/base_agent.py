@@ -30,6 +30,16 @@ class BaseAgent(ABC):
                 "max_output_tokens": self.config.get("max_tokens", 8000),
             }
         )
+        
+        # Capture agent state for audit trail
+        from app.services.audit_service import audit_service
+        self.state_id = audit_service.capture_agent_state(
+            agent_name=self.config.get('name', 'unknown'),
+            agent_config=self.config,
+            task_id=task_id,
+            user_prompt=self.config.get('user_prompt')
+        )
+        self.logger.info(f"Agent state captured: {self.state_id}")
 
     def _get_system_prompt(self) -> str:
         """Combines enforcement prompt and guardrails into a system prompt."""

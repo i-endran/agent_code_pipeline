@@ -105,6 +105,42 @@ class TaskArtifact(Base):
     task = relationship("Task", back_populates="artifacts")
 
 
+class AgentExecutionLog(Base):
+    """Agent execution audit log - captures full agent state for each run."""
+    __tablename__ = "agent_execution_logs"
+    
+    id = Column(String, primary_key=True, index=True)  # UUID
+    task_id = Column(String, ForeignKey("tasks.id"))
+    agent_name = Column(String)  # scribe, architect, forge, sentinel, phoenix
+    
+    # Agent Configuration Snapshot
+    model = Column(String)
+    provider = Column(String)
+    temperature = Column(Float)
+    max_tokens = Column(Integer)
+    guardrails = Column(JSON)
+    policies = Column(JSON)
+    enforcement_prompt = Column(Text)
+    tools = Column(JSON)
+    user_prompt = Column(Text, nullable=True)
+    
+    # Execution Metadata
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    status = Column(String, default="in_progress")  # in_progress, success, failed
+    error_message = Column(Text, nullable=True)
+    
+    # Git Integration (for Forge commits)
+    commit_hash = Column(String, nullable=True)
+    commit_message = Column(Text, nullable=True)
+    
+    # Artifact reference
+    config_artifact_path = Column(String, nullable=True)
+    
+    # Relationship
+    task = relationship("Task", backref="agent_executions")
+
+
 class StageLog(Base):
     """Log entry for each agent stage execution."""
     __tablename__ = "stage_logs"

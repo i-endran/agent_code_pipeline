@@ -301,25 +301,29 @@
                         <label class="form-label">LLM Model</label>
                         <div><span class="badge bg-secondary">Gemini 2.0 Flash</span></div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">User Prompt / Specific Notes</label>
-                        <textarea class="form-control" id="scribe-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                        <textarea class="form-control" id="scribe-prompt" rows="3"
+                            placeholder="Additional instructions for the agent..."></textarea>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Document Types</label>
                         <div class="d-flex flex-wrap gap-3">
                             <div class="form-check">
-                                <input class="form-check-input scribe-doc-type" type="checkbox" value="feature_doc" id="doc-feature" checked>
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="feature_doc"
+                                    id="doc-feature" checked>
                                 <label class="form-check-label" for="doc-feature">Feature Doc</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input scribe-doc-type" type="checkbox" value="dpia" id="doc-dpia">
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="dpia"
+                                    id="doc-dpia">
                                 <label class="form-check-label" for="doc-dpia">DPIA</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input scribe-doc-type" type="checkbox" value="data_flow" id="doc-data-flow">
+                                <input class="form-check-input scribe-doc-type" type="checkbox" value="data_flow"
+                                    id="doc-data-flow">
                                 <label class="form-check-label" for="doc-data-flow">Data Flow</label>
                             </div>
                         </div>
@@ -378,7 +382,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">User Prompt / Specific Notes</label>
-                        <textarea class="form-control" id="architect-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                        <textarea class="form-control" id="architect-prompt" rows="3"
+                            placeholder="Additional instructions for the agent..."></textarea>
                     </div>
 
 
@@ -435,7 +440,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">User Prompt / Specific Notes</label>
-                        <textarea class="form-control" id="forge-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                        <textarea class="form-control" id="forge-prompt" rows="3"
+                            placeholder="Additional instructions for the agent..."></textarea>
                     </div>
 
 
@@ -454,9 +460,39 @@
                             <label class="form-label">Test Command</label>
                             <input type="text" class="form-control" id="forge-test" value="npm test">
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="mb-3">
                             <label class="form-label">Lint Command</label>
                             <input type="text" class="form-control" id="forge-lint" value="npm run lint">
+                        </div>
+
+                        <!-- Commit Configuration -->
+                        <div class="mb-3 mt-4">
+                            <label class="form-label fw-bold">Git Commit Settings</label>
+                            <hr class="mt-1 mb-2">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="forge-commit-strategy" class="form-label">Commit Strategy</label>
+                            <select class="form-select" id="forge-commit-strategy">
+                                <option value="per_step">Per Step (Commit after each change)</option>
+                                <option value="bulk">Bulk (Single commit at end)</option>
+                            </select>
+                            <small class="text-muted">Controls when code changes are committed to Git</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="forge-commit-prefix" class="form-label">Commit Message Prefix</label>
+                            <input type="text" class="form-control" id="forge-commit-prefix" value="[FORGE-AI]">
+                            <small class="text-muted">Prefix added to all commit messages</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="forge-metadata-enabled" checked>
+                            <label class="form-check-label" for="forge-metadata-enabled">
+                                Include Agent Metadata in Commits
+                            </label>
+                            <small class="d-block text-muted">Embeds agent state ID, model, and parameters in commit for
+                                full traceability</small>
                         </div>
                     </div>
                 </div>
@@ -555,7 +591,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">User Prompt / Specific Notes</label>
-                        <textarea class="form-control" id="sentinel-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                        <textarea class="form-control" id="sentinel-prompt" rows="3"
+                            placeholder="Additional instructions for the agent..."></textarea>
                     </div>
 
 
@@ -618,7 +655,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">User Prompt / Specific Notes</label>
-                        <textarea class="form-control" id="phoenix-prompt" rows="3" placeholder="Additional instructions for the agent..."></textarea>
+                        <textarea class="form-control" id="phoenix-prompt" rows="3"
+                            placeholder="Additional instructions for the agent..."></textarea>
                     </div>
 
 
