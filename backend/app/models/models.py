@@ -167,3 +167,16 @@ class StageLog(Base):
     
     # Relationship
     task = relationship("Task", back_populates="stage_logs")
+
+
+class Connector(Base):
+    """External platform connector (GitHub, Slack, etc.)"""
+    __tablename__ = "connectors"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    type = Column(String(50), nullable=False)  # github, gitlab, slack, teams
+    config = Column(JSON, nullable=False, default=dict)  # tokens, urls, etc.
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

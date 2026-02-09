@@ -43,11 +43,42 @@ If REJECTED, provide specific fix instructions for the FORGE agent.
         
         if is_approved:
             self.logger.info("SENTINEL: Changes APPROVED. Creating MR...")
-            # Simulate MR creation
-            mr_link = f"https://github.com/simulated/repo/pull/{self.task_id}"
+            
+            mr_url = None
+            connector_id = context.get("sentinel", {}).get("connector_id")
+            
+            if connector_id:
+                try:
+                    from app.services.connector_service import connector_service
+                    from app.db.database import SessionLocal
+                    
+                    db = SessionLocal()
+                    try:
+                        # Extract owner/repo from repo_url if possible, or use config
+                        repo_owner = context.get("scribe", {}).get("repo_owner", "owner")
+                        repo_name = context.get("scribe", {}).get("repo_name", "repo")
+                        
+                        mr_data = await connector_service.create_github_mr(
+                            connector_id=connector_id,
+                            repo_owner=repo_owner,
+                            repo_name=repo_name,
+                            title=f"[AUTO] {context.get('task_id')}",
+                            head=branch_name,
+                            base="main",
+                            body=review_result,
+                            db=db
+                        )
+                        mr_url = mr_data.get("html_url")
+                    finally:
+                        db.close()
+                except Exception as e:
+                    self.logger.error(f"SENTINEL: Failed to create GitHub MR: {e}")
+            
+            mr_link = mr_url or f"https://github.com/simulated/repo/pull/{self.task_id}"
+            
             return {
                 "status": "success",
-                "message": "Review approved. MR created.",
+                "message": "Review approved. MR created." if mr_url else "Review approved (Simulation).",
                 "review_path": review_path,
                 "patch_path": patch_path,
                 "mr_url": mr_link,

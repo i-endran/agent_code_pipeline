@@ -11,7 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.api import pipelines, tasks, agents, websocket, artifacts, audit
+from app.api import (
+    pipelines, 
+    tasks, 
+    agents, 
+    websocket, 
+    artifacts, 
+    audit,
+    connectors
+)
 from app.db.database import engine, Base
 from app.services.logging_service import setup_logging
 
@@ -83,6 +91,7 @@ app.include_router(tasks.router, prefix="/api/tasks", tags=["Tasks"])
 app.include_router(agents.router, prefix="/api/agents", tags=["Agents"])
 app.include_router(artifacts.router, prefix="/api/artifacts", tags=["Artifacts"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
+app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 

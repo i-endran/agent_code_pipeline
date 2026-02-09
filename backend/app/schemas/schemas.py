@@ -185,3 +185,28 @@ class AllAgentsResponse(BaseModel):
     agents: Dict[str, AgentConfigResponse]
     total_estimated_tokens: int
     total_estimated_cost: float
+
+
+# ============ Connector Schemas ============
+
+class ConnectorBase(BaseModel):
+    """Base schema for connectors."""
+    name: str
+    type: str  # github, gitlab, slack, etc.
+    config: Dict[str, Any]
+    is_active: bool = True
+
+
+class ConnectorCreate(ConnectorBase):
+    """Schema for creating a connector."""
+    pass
+
+
+class ConnectorResponse(ConnectorBase):
+    """Schema for connector response."""
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
