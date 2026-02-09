@@ -304,3 +304,110 @@
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(102, 126, 234, 0.8);
 }
+
+/* ==============================
+   AGENT ACTIVITY QUEUE
+   ============================== */
+.task-card {
+    background: rgba(30, 32, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+.task-card.idle {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.task-card .task-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.task-card.idle .task-name {
+    color: #6c757d;
+}
+
+.task-card .task-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-running {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Next Task Section */
+.next-task-box {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.next-task-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #6366f1;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.next-task-name {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Utility to hide scrollbar but keep functionality */
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
