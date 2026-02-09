@@ -22,6 +22,7 @@ An AI-powered SDLC automation tool that orchestrates 5 specialized agents (power
 ✅ **Repository Management**: Automated cloning, branching, and artifact storage  
 ✅ **Real-time Updates**: WebSocket status notifications  
 ✅ **Structured Logging**: Daily rotation with task correlation IDs
+✅ **Agent Activity Queue**: Granular tracking of tasks per agent (SCRIBE, ARCHITECT, FORGE, SENTINEL)
 
 ## Quick Start
 
@@ -87,7 +88,7 @@ npm run dev
 ```
 
 ### Access Points
-- **Frontend**: http://localhost:3000 (or file:// for Phase 2)
+- **Frontend**: http://localhost:3001 (Phase 3 Dev Server)
 - **Backend API**: http://localhost:8000
 - **Swagger Docs**: http://localhost:8000/docs
 - **RabbitMQ Admin**: http://localhost:15672 (guest/guest)
@@ -189,7 +190,7 @@ pytest tests/ -v --cov=app
 - ✅ **Phase 2B**: Storage (Repository & artifact services)
 - ✅ **Phase 2C**: Agents (SCRIBE, ARCHITECT, FORGE, SENTINEL)
 - ✅ **Phase 2D**: Audit Trail (State snapshots, Git metadata)
-- 🚧 **Phase 3**: React + Tailwind frontend migration
+- ✅ **Phase 3**: React + Tailwind frontend migration (Core Pipeline + Activity Queue)
 - 📋 **Phase 4**: Connectors, Tools, MCP integration
 - 📋 **Phase 5**: Human-in-the-Loop workflows
 - 📋 **Phase 6**: PHOENIX full implementation, cleanup

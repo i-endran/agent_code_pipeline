@@ -66,6 +66,7 @@ async def execute_pipeline(task_id: str):
         scribe = ScribeAgent(context["scribe"], task_id)
         scribe_results = await scribe.run(context)
         context["scribe_results"] = scribe_results
+        send_task_update(task_id, {"current_stage": "scribe", "status": "completed", "progress": 35, "message": "SCRIBE completed"})
 
         # 3. ARCHITECT Stage
         if context.get("architect", {}).get("enabled"):
@@ -74,6 +75,7 @@ async def execute_pipeline(task_id: str):
             architect = ArchitectAgent(context["architect"], task_id)
             architect_results = await architect.run(context)
             context["architect_results"] = architect_results
+            send_task_update(task_id, {"current_stage": "architect", "status": "completed", "progress": 55, "message": "ARCHITECT completed"})
 
         # 4. FORGE Stage
         if context.get("forge", {}).get("enabled"):
@@ -82,6 +84,7 @@ async def execute_pipeline(task_id: str):
             forge = ForgeAgent(context["forge"], task_id)
             forge_results = await forge.run(context)
             context["forge_results"] = forge_results
+            send_task_update(task_id, {"current_stage": "forge", "status": "completed", "progress": 75, "message": "FORGE completed"})
 
         # 5. SENTINEL Stage
         if context.get("sentinel", {}).get("enabled"):
@@ -90,6 +93,7 @@ async def execute_pipeline(task_id: str):
             sentinel = SentinelAgent(context["sentinel"], task_id)
             sentinel_results = await sentinel.run(context)
             context["sentinel_results"] = sentinel_results
+            send_task_update(task_id, {"current_stage": "sentinel", "status": "completed", "progress": 95, "message": "SENTINEL completed"})
             
             if sentinel_results.get("action") == "reworking":
                 send_task_update(task_id, {"message": "Fixes required. Routing back to FORGE (simulation)..."})

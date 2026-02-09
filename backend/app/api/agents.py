@@ -15,7 +15,7 @@ from app.services.agent_config import (
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/status")
 async def list_agents():
     """
     Get all agent configurations.
@@ -30,7 +30,7 @@ async def list_agents():
     for agent_id, config in configs.items():
         agents[agent_id] = {
             "name": config["name"],
-            "description": config["description"],
+            "description": config.get("description", ""),
             "model": config["model"],
             "provider": config["provider"],
             "temperature": config["temperature"],
@@ -43,6 +43,17 @@ async def list_agents():
         "total_estimated_tokens": estimates["total_tokens"],
         "total_estimated_cost": estimates["total_cost"]
     }
+
+
+@router.get("/activity")
+async def get_agent_activity():
+    """
+    Get real-time activity status for all agents.
+    
+    Returns what each agent is currently doing and what's next in their queue.
+    """
+    from app.services.status_service import status_service
+    return status_service.get_all_statuses()
 
 
 @router.get("/{agent_id}")
