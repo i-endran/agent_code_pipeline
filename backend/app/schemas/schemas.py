@@ -126,6 +126,7 @@ class PipelineRunScribeConfig(BaseModel):
 class PipelineRunRequest(BaseModel):
     """Schema for running a pipeline directly."""
     repo_url: str
+    readme_url: Optional[str] = None
     branch: str = "main"
     requirements: str
     agents: Dict[str, Dict[str, bool]]

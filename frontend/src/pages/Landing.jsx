@@ -60,6 +60,7 @@ export default function Landing() {
 
     // Deployment Form
     const [repoUrl, setRepoUrl] = useState('');
+    const [readmeUrl, setReadmeUrl] = useState('');
     const [branch, setBranch] = useState('main');
     const [taskDescription, setTaskDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,6 +225,7 @@ export default function Landing() {
         try {
             const payload = {
                 repo_url: repoUrl,
+                readme_url: readmeUrl,
                 branch: branch,
                 requirements: taskDescription,
                 agents: {
@@ -431,6 +433,16 @@ export default function Landing() {
                                         className="input"
                                         value={branch}
                                         onChange={e => setBranch(e.target.value)}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="label">README URL (Optional for Context)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://raw.githubusercontent.com/username/repo/main/README.md"
+                                        className="input"
+                                        value={readmeUrl}
+                                        onChange={e => setReadmeUrl(e.target.value)}
                                     />
                                 </div>
                             </div>

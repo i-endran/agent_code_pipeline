@@ -4,12 +4,13 @@ Pipelines API Routes
 CRUD operations for pipeline configurations.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
 import os
+import httpx
 
 from app.db.database import get_db
 from app.models.models import Pipeline, TaskStatus, Task, Repository
@@ -26,6 +27,20 @@ from app.services.repo_service import repo_service
 
 router = APIRouter()
 
+async def fetch_readme_content(url: str) -> str:
+    """Fetches README content from a URL."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, follow_redirects=True)
+            if response.status_code == 200:
+                return response.text
+            else:
+                print(f"Failed to fetch README from {url}: {response.status_code}")
+                return ""
+    except Exception as e:
+        print(f"Error fetching README from {url}: {e}")
+        return ""
+
 @router.post("/run", response_model=Dict[str, Any], status_code=201)
 async def run_pipeline(
     request: PipelineRunRequest,
@@ -35,7 +50,9 @@ async def run_pipeline(
     Create a pipeline and immediately run it as a task.
     Handles repo cloning and context extraction.
     """
-    # 1. Handle Repo
+    # 1. Handle Repo Record (DB Only)
+    # We do NOT clone here. Repo cloning is handled by Architect/Forge agents later if needed.
+    # However, we ensure the Repository record exists so we can link it.
     repo = db.query(Repository).filter(Repository.source_url == request.repo_url).first()
     if not repo:
         repo = Repository(source_url=request.repo_url, clone_status="pending")
@@ -43,29 +60,12 @@ async def run_pipeline(
         db.commit()
         db.refresh(repo)
 
-    # Clone Repo
-    repo_path = None
-    try:
-        # We need to use repo.id (int)
-        repo_path = repo_service.clone_repo(repo.id, request.repo_url)
-        repo.local_path = repo_path
-        repo.clone_status = "cloned"
-        db.commit()
-    except Exception as e:
-        print(f"Failed to clone repo: {e}")
-        # Proceed even if clone fails, but context will be empty
-
+    # 2. Fetch Context (README)
     project_context = ""
-    if repo_path:
-        readme_path = os.path.join(repo_path, "README.md")
-        if os.path.exists(readme_path):
-            try:
-                with open(readme_path, "r", encoding="utf-8") as f:
-                    project_context = f.read()
-            except Exception as e:
-                print(f"Failed to read README.md: {e}")
+    if request.readme_url:
+        project_context = await fetch_readme_content(request.readme_url)
 
-    # 2. Construct Pipeline Config
+    # 3. Construct Pipeline Config
     scribe_cfg = request.scribe_config
 
     agent_configs = {
@@ -84,7 +84,7 @@ async def run_pipeline(
 
         "forge": ForgeInput(
             enabled=request.agents.get("forge", {}).get("enabled", False),
-            repo_path=repo_path if repo_path else "",
+            repo_path="", # Will be handled by Forge agent via repo_id
             target_branch=request.branch
         ).model_dump(),
 
@@ -121,7 +121,7 @@ async def run_pipeline(
     db.commit()
     db.refresh(pipeline)
 
-    # 3. Create Task
+    # 4. Create Task
     estimates = calculate_token_estimate(pipeline.enabled_agents)
 
     task_id = str(uuid.uuid4())
