@@ -26,7 +26,8 @@ from app.api import (
     agent_queue,
     system_config,
     webhooks_crud,
-    agent_mapping
+    agent_mapping,
+    scribe
 )
 from app.db.database import engine, Base, SessionLocal
 from app.services.logging_service import setup_logging
@@ -106,6 +107,7 @@ app.include_router(
     tags=["Pipelines"]
 )
 
+app.include_router(scribe.router, prefix="/api/scribe", tags=["Scribe"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["Tasks"])
 app.include_router(agents.router, prefix="/api/agents", tags=["Agents"])
 app.include_router(artifacts.router, prefix="/api/artifacts", tags=["Artifacts"])

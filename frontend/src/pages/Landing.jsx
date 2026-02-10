@@ -64,6 +64,11 @@ export default function Landing() {
     const [taskDescription, setTaskDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Scribe Specific State
+    const [scribePrompt, setScribePrompt] = useState('');
+    const [selectedDocs, setSelectedDocs] = useState(new Set(['feature_doc']));
+    const [outputFormat, setOutputFormat] = useState('markdown');
+
     // Modal State
     const [showModal, setShowModal] = useState(null); // agentId
     const [editConfig, setEditConfig] = useState({});
@@ -177,6 +182,34 @@ export default function Landing() {
     };
 
 
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await axios.post(`${API_BASE}/scribe/upload`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setTaskDescription(res.data.text);
+            alert(`File uploaded: ${res.data.filename}`);
+        } catch (error) {
+            console.error("Upload failed:", error);
+            alert("File upload failed.");
+        }
+    };
+
+    const toggleDoc = (doc) => {
+        setSelectedDocs(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(doc)) newSet.delete(doc);
+            else newSet.add(doc);
+            return newSet;
+        });
+    };
+
     const handleRunPipeline = async () => {
         if (!repoUrl) {
             alert('Repository URL is required');
@@ -199,10 +232,15 @@ export default function Landing() {
                     forge: { enabled: enabledAgents.has('forge') },
                     sentinel: { enabled: enabledAgents.has('sentinel') },
                     phoenix: { enabled: enabledAgents.has('phoenix') }
+                },
+                scribe_config: {
+                    user_prompt: scribePrompt,
+                    selected_documents: Array.from(selectedDocs),
+                    output_format: outputFormat
                 }
             };
 
-            const res = await axios.post(`${API_BASE}/v1/pipelines`, payload);
+            const res = await axios.post(`${API_BASE}/v1/pipelines/run`, payload);
             alert(`Pipeline started! Task ID: ${res.data.task_id}`);
             // Optional: navigate to specific task view if it existed
             setTaskDescription(''); // Reset form
@@ -312,7 +350,68 @@ export default function Landing() {
                                     value={taskDescription}
                                     onChange={e => setTaskDescription(e.target.value)}
                                 />
+                                <div className="mt-2 text-right">
+                                    <input
+                                        type="file"
+                                        id="upload-req"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                        accept=".txt,.md,.docx"
+                                    />
+                                    <label htmlFor="upload-req" className="text-xs text-[#667eea] cursor-pointer hover:text-white">
+                                        📄 Upload Requirements (txt, md, docx)
+                                    </label>
+                                </div>
                             </div>
+
+                            {enabledAgents.has('scribe') && (
+                                <div className="p-3 bg-[#1a1b23] rounded-lg border border-[#2d3748] space-y-3">
+                                    <h3 className="text-sm font-semibold text-white">Scribe Configuration</h3>
+
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Documents to Generate</label>
+                                        <div className="flex gap-2">
+                                            {['feature_doc', 'dpia', 'data_flow'].map(doc => (
+                                                <button
+                                                    key={doc}
+                                                    className={`px-2 py-1 text-xs rounded border ${
+                                                        selectedDocs.has(doc)
+                                                        ? 'bg-[#667eea]/20 border-[#667eea] text-[#667eea]'
+                                                        : 'border-[#2d3748] text-gray-500 hover:text-gray-300'
+                                                    }`}
+                                                    onClick={() => toggleDoc(doc)}
+                                                >
+                                                    {doc.replace('_', ' ').toUpperCase()}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Output Format</label>
+                                        <select
+                                            className="w-full bg-black border border-[#2d3748] rounded p-1 text-white text-xs"
+                                            value={outputFormat}
+                                            onChange={e => setOutputFormat(e.target.value)}
+                                        >
+                                            <option value="markdown">Markdown</option>
+                                            <option value="docx">Microsoft Word (.docx)</option>
+                                            <option value="cloud">Cloud Tool (Not Implemented)</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1">Scribe Prompt (User Notes)</label>
+                                        <textarea
+                                            className="w-full bg-black border border-[#2d3748] rounded p-2 text-white text-xs h-16 resize-none"
+                                            placeholder="Additional context for requirements analysis..."
+                                            value={scribePrompt}
+                                            onChange={e => setScribePrompt(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Repository URL</label>

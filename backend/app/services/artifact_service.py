@@ -1,7 +1,7 @@
 import logging
 import json
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class ArtifactService:
         task_dir.mkdir(parents=True, exist_ok=True)
         return task_dir
 
-    def save_artifact(self, task_id: str, artifact_type: str, content: str, filename: Optional[str] = None) -> str:
+    def save_artifact(self, task_id: str, artifact_type: str, content: Union[str, bytes, dict, list], filename: Optional[str] = None) -> str:
         """Saves an artifact (document, JSON, etc.) to the task directory."""
         task_dir = self.get_task_dir(task_id)
         
@@ -39,6 +39,9 @@ class ArtifactService:
             if isinstance(content, (dict, list)):
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(content, f, indent=2)
+            elif isinstance(content, bytes):
+                with open(file_path, "wb") as f:
+                    f.write(content)
             else:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(content)
