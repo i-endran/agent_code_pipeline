@@ -118,6 +118,19 @@ class PipelineResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class PipelineRunScribeConfig(BaseModel):
+    user_prompt: Optional[str] = None
+    selected_documents: List[str] = ["feature_doc"]
+    output_format: str = "markdown"
+
+class PipelineRunRequest(BaseModel):
+    """Schema for running a pipeline directly."""
+    repo_url: str
+    readme_url: Optional[str] = None
+    branch: str = "main"
+    requirements: str
+    agents: Dict[str, Dict[str, bool]]
+    scribe_config: Optional[PipelineRunScribeConfig] = None
 
 # ============ Task Schemas ============
 
@@ -345,5 +358,38 @@ class NotificationPreferenceResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     
+    class Config:
+        from_attributes = True
+
+# ============ Webhook Schemas ============
+
+class WebhookBase(BaseModel):
+    name: str
+    url: str
+    secret: Optional[str] = None
+    events: List[str] = []
+    platform: str = "custom"
+    is_active: bool = True
+
+class WebhookCreate(WebhookBase):
+    pass
+
+class WebhookResponse(WebhookBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ============ Agent Mapping Schemas ============
+
+class AgentConnectorMappingResponse(BaseModel):
+    id: int
+    agent_stage: AgentStageEnum
+    connector_id: Optional[int]
+    webhook_id: Optional[int]
+    is_active: bool
+
     class Config:
         from_attributes = True

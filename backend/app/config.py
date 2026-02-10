@@ -7,7 +7,7 @@ Set APP_ENV=dev or APP_ENV=prod to switch modes.
 
 import os
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

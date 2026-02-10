@@ -1,2 +1,2 @@
 """API package."""
-from app.api import pipelines, tasks, agents, websocket
+from app.api import pipelines, tasks, agents, websocket, scribe

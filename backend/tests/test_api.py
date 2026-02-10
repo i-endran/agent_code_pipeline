@@ -80,7 +80,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": True, "requirement_text": "Test requirement"},
                 "architect": {"enabled": False},
                 "forge": {"enabled": False},
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -101,7 +100,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": False},
                 "architect": {"enabled": False},
                 "forge": {"enabled": True},  # Should fail
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -119,7 +117,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": False},
                 "architect": {"enabled": False},
                 "forge": {"enabled": False},
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -138,7 +135,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": True},
                 "architect": {"enabled": False},
                 "forge": {"enabled": False},
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -159,7 +155,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": True},
                 "architect": {"enabled": True},
                 "forge": {"enabled": False},
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -188,7 +183,6 @@ class TestPipelineAPI:
                 "scribe": {"enabled": True},
                 "architect": {"enabled": False},
                 "forge": {"enabled": False},
-                "herald": {"enabled": False},
                 "sentinel": {"enabled": False},
                 "phoenix": {"enabled": False}
             }
@@ -210,7 +204,7 @@ class TestAgentsAPI:
     
     def test_list_agents(self, client):
         """Test listing all agents."""
-        response = client.get("/api/v1/agents/")
+        response = client.get("/api/agents/status")
         assert response.status_code == 200
         data = response.json()
         assert "agents" in data
@@ -219,7 +213,7 @@ class TestAgentsAPI:
     
     def test_get_agent(self, client):
         """Test getting a specific agent."""
-        response = client.get("/api/v1/agents/scribe")
+        response = client.get("/api/agents/scribe")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "scribe"
@@ -228,7 +222,7 @@ class TestAgentsAPI:
     
     def test_get_agent_not_found(self, client):
         """Test getting a non-existent agent."""
-        response = client.get("/api/v1/agents/nonexistent")
+        response = client.get("/api/agents/nonexistent")
         assert response.status_code == 404
 
 
@@ -237,19 +231,19 @@ class TestTasksAPI:
     
     def test_list_running_tasks_empty(self, client):
         """Test listing running tasks when none exist."""
-        response = client.get("/api/v1/tasks/running")
+        response = client.get("/api/tasks/running")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
     
     def test_get_task_not_found(self, client):
         """Test getting a non-existent task."""
-        response = client.get("/api/v1/tasks/9999")
+        response = client.get("/api/tasks/9999")
         assert response.status_code == 404
     
     def test_token_dashboard(self, client):
         """Test token dashboard endpoint."""
-        response = client.get("/api/v1/tasks/dashboard/tokens")
+        response = client.get("/api/tasks/dashboard/tokens")
         assert response.status_code == 200
         data = response.json()
         assert "total_tokens" in data
